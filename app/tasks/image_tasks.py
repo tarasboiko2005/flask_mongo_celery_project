@@ -1,10 +1,9 @@
 from PIL import Image
 import os
-import time
 from datetime import datetime
 from pymongo import MongoClient
 
-def register_task(celery):
+def register_image_tasks(celery):
     @celery.task(name="tasks.process_image")
     def process_image(job_id: str, filename: str, filepath: str):
         client = MongoClient(os.getenv("MONGO_URI"))
@@ -12,17 +11,14 @@ def register_task(celery):
         jobs = db["jobs"]
 
         jobs.update_one({"job_id": job_id}, {"$set": {"status": "processing", "progress": 25, "updated_at": datetime.utcnow()}})
-        time.sleep(2)
 
         img = Image.open(filepath)
-
-        img = img.convert("L")
+        img = img.convert("L")  # grayscale
 
         output_dir = os.getenv("FILE_OUTPUT_DIR", "./output")
         name, ext = os.path.splitext(filename)
         new_filename = f"processed_{name}{ext}"
         new_filepath = os.path.join(output_dir, new_filename)
-
         img.save(new_filepath)
 
         jobs.update_one(
