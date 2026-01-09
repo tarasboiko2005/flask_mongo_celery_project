@@ -1,57 +1,45 @@
-import uuid
+import uuid, os
 from datetime import datetime
 from flask import Blueprint, current_app, jsonify, send_file, request
 bp = Blueprint("api", __name__)
 
-@bp.route("/jobs", methods=["POST"])
-def create_job():
+@bp.route("/jobs/image", methods=["POST"])
+def upload_image():
     """
-    Create a new job
+    Upload image for processing
     ---
     tags:
       - Jobs
+    consumes:
+      - multipart/form-data
     parameters:
-      - name: body
-        in: body
+      - name: file
+        in: formData
+        type: file
         required: true
-        schema:
-          type: object
-          properties:
-            filename:
-              type: string
-              description: Name of the file to generate
-            priority:
-              type: string
-              enum: [low, medium, high]
-              default: low
-              description: Priority of the job
     responses:
       202:
-        description: Job created
-        examples:
-          application/json:
-            {
-              "job_id": "1",
-              "status": "queued",
-              "progress": 0
-            }
+        description: Image job created
     """
-    data = request.get_json() or {}
-    filename = data.get("filename", "default.txt")
-    priority = data.get("priority", "low")
+    file = request.files["file"]
+    filename = file.filename
+    output_dir = os.getenv("FILE_OUTPUT_DIR", "./output")
+    filepath = os.path.join(output_dir, filename)
+    file.save(filepath)
 
     job_id = str(uuid.uuid4())
     doc = {
         "job_id": job_id,
         "status": "queued",
         "progress": 0,
-        "priority": priority,
         "filename": filename,
+        "file_path": filepath,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
     current_app.jobs.insert_one(doc)
-    current_app.celery_app.send_task("tasks.generate_file", args=[job_id, filename])
+    current_app.celery_app.send_task("tasks.process_image", args=[job_id, filename, filepath])
+
     return jsonify({"job_id": job_id, "status": "queued", "progress": 0}), 202
 
 @bp.route("/jobs/<job_id>", methods=["GET"])
