@@ -30,7 +30,7 @@ def job_status(job_id):
 @bp.route("/jobs/<job_id>/download", methods=["GET"])
 def job_download(job_id):
     """
-    Download processed image by index
+    Download processed image(s)
     ---
     tags:
       - Jobs
@@ -43,7 +43,7 @@ def job_download(job_id):
         in: query
         required: false
         type: integer
-        description: Index of processed image (default 0)
+        description: Index of processed image (default 0, only for multi-file jobs)
     responses:
       200:
         description: File ready for download
@@ -58,15 +58,25 @@ def job_download(job_id):
     if job["status"] != "ready":
         return jsonify({"error": "not_ready"}), 409
 
-    index = int(request.args.get("index", 0))
-    files = job.get("processed_files", [])
+    if "processed_files" in job and job["processed_files"]:
+        index = int(request.args.get("index", 0))
+        files = job["processed_files"]
 
-    if index >= len(files):
-        return jsonify({"error": "invalid_index"}), 409
+        if index >= len(files):
+            return jsonify({"error": "invalid_index"}), 409
 
-    file_info = files[index]
-    return send_file(
-        file_info["file_path"],
-        as_attachment=True,
-        download_name=file_info["filename"]
-    )
+        file_info = files[index]
+        return send_file(
+            file_info["file_path"],
+            as_attachment=True,
+            download_name=file_info["filename"]
+        )
+
+    if "file_path" in job and "filename" in job:
+        return send_file(
+            job["file_path"],
+            as_attachment=True,
+            download_name=job["filename"]
+        )
+
+    return jsonify({"error": "no_file"}), 409
