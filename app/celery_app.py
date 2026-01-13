@@ -1,8 +1,10 @@
 import os
 from celery import Celery
-from flask import Flask
+from app.factory import create_app  
 
-def make_celery(app: Flask):
+flask_app = create_app()
+
+def make_celery(app):
     celery = Celery(
         app.import_name,
         broker=os.getenv("REDIS_URL"),
@@ -13,4 +15,13 @@ def make_celery(app: Flask):
         result_serializer="json",
         accept_content=["json"]
     )
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
     return celery
+
+celery = make_celery(flask_app)

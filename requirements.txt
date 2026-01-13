@@ -8,3 +8,5 @@ pillow
 beautifulsoup4
 requests
 pydantic
+Flask-SQLAlchemy
+SQLAlchemy

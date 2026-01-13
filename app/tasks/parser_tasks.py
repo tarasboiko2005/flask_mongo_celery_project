@@ -6,6 +6,7 @@ from PIL import Image
 from io import BytesIO
 from urllib.parse import urljoin
 from app.schemas import ParsedImage, ParseResult
+from app.repositories.job_repository import update_job
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,7 +14,6 @@ logger = logging.getLogger(__name__)
 def register_parser_tasks(celery):
     @celery.task(name="tasks.parse_page")
     def parse_page(job_id: str, url: str, limit: int = 5):
-
         client = MongoClient(os.getenv("MONGO_URI"))
         db = client.get_default_database()
         jobs = db["jobs"]
@@ -23,6 +23,8 @@ def register_parser_tasks(celery):
             {"$set": {"status": "processing", "progress": 25, "updated_at": datetime.utcnow()}}
         )
 
+        update_job(job_id, status="processing", progress=25, updated_at=datetime.utcnow())
+
         logger.info(f"[{job_id}] Start parsing {url}")
 
         try:
@@ -31,6 +33,7 @@ def register_parser_tasks(celery):
         except Exception as e:
             logger.error(f"[{job_id}] Failed to fetch page: {e}")
             jobs.update_one({"job_id": job_id}, {"$set": {"status": "failed", "progress": 100}})
+            update_job(job_id, status="failed", progress=100, updated_at=datetime.utcnow())
             return {"error": str(e)}
 
         soup = BeautifulSoup(response.text, "html.parser")
@@ -91,9 +94,12 @@ def register_parser_tasks(celery):
         except Exception as e:
             logger.error(f"[{job_id}] Validation failed: {e}")
             jobs.update_one({"job_id": job_id}, {"$set": {"status": "failed", "progress": 100}})
+            update_job(job_id, status="failed", progress=100, updated_at=datetime.utcnow())
             return {"error": str(e)}
 
         jobs.update_one({"job_id": job_id}, {"$set": result.model_dump(mode="json")})
+
+        update_job(job_id, status=status, progress=100, updated_at=datetime.utcnow())
 
         logger.info(f"[{job_id}] Finished parsing. Files: {len(processed_files)}")
         return result.model_dump(mode="json")

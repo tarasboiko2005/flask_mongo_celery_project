@@ -5,12 +5,18 @@ from pymongo import MongoClient
 from app.tasks import register_task
 from .celery_app import make_celery
 from app.schemas import JobStatusResponse, ParseJobRequest, ImageUploadRequest, ProcessedFile
+from app.db import db
 
 def create_app():
     app = Flask(__name__)
+
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
     app.config["MONGO_URI"] = os.getenv("MONGO_URI")
     app.config["FILE_OUTPUT_DIR"] = os.getenv("FILE_OUTPUT_DIR", "./output")
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
 
     swagger_config = {
         "headers": [],
@@ -58,13 +64,15 @@ def create_app():
     app.jobs = app.mongo_db["jobs"]
 
     os.makedirs(app.config["FILE_OUTPUT_DIR"], exist_ok=True)
-
     app.celery_app = make_celery(app)
     register_task(app.celery_app)
 
     from .routes import blueprints
     for bp in blueprints:
         app.register_blueprint(bp, url_prefix="/api")
+
+    with app.app_context():
+        db.create_all()
 
     return app
 
