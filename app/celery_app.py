@@ -1,6 +1,7 @@
 import os
 from celery import Celery
-from app.factory import create_app  
+from celery.schedules import crontab
+from app.factory import create_app
 
 flask_app = create_app()
 
@@ -25,3 +26,15 @@ def make_celery(app):
     return celery
 
 celery = make_celery(flask_app)
+
+celery.conf.beat_schedule = {
+    "parse-page-every-morning": {
+        "task": "tasks.parse_page",
+        "schedule": crontab(hour=7, minute=0),
+        "args": (
+            os.getenv("DAILY_JOB_ID", "job_daily"),
+            os.getenv("PARSER_URL", "https://www.python.org"),
+            int(os.getenv("PARSER_LIMIT", "5")),
+        ),
+    },
+}

@@ -36,5 +36,16 @@ services:
     volumes:
       - .:/app
 
+  beat:
+    build: .
+    container_name: celery_beat
+    command: celery -A app.celery_app beat --loglevel=INFO
+    env_file: .env
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - .:/app
+
 volumes:
   mongo_data:
