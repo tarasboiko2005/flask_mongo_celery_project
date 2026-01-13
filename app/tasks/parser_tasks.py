@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from PIL import Image
 from io import BytesIO
 from urllib.parse import urljoin
+from app.schemas import ParsedImage, ParseResult
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,20 +25,32 @@ def register_parser_tasks(celery):
 
         logger.info(f"[{job_id}] Start parsing {url}")
 
-        response = requests.get(url)
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+        except Exception as e:
+            logger.error(f"[{job_id}] Failed to fetch page: {e}")
+            jobs.update_one({"job_id": job_id}, {"$set": {"status": "failed", "progress": 100}})
+            return {"error": str(e)}
+
         soup = BeautifulSoup(response.text, "html.parser")
 
-        images = [img["src"] for img in soup.find_all("img") if "src" in img.attrs]
+        images = []
+        for img in soup.find_all("img"):
+            if "src" in img.attrs:
+                full_url = urljoin(url, img["src"])
+                images.append(full_url)
+
         images = images[:limit]
+        logger.info(f"[{job_id}] Found {len(images)} images")
 
         processed_files = []
         output_dir = os.getenv("FILE_OUTPUT_DIR", "./output")
+        os.makedirs(output_dir, exist_ok=True)
 
-        for src in images:
+        for full_url in images:
             try:
-                full_url = urljoin(url, src)
-
-                if not full_url.lower().endswith((".png", ".jpg", ".jpeg", ".gif")):
+                if not full_url.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
                     logger.warning(f"[{job_id}] Skip unsupported format: {full_url}")
                     continue
 
@@ -51,24 +64,38 @@ def register_parser_tasks(celery):
                 filepath = os.path.join(output_dir, filename)
                 img.save(filepath)
 
-                processed_files.append({"filename": filename, "file_path": filepath})
+                processed_file = ParsedImage(
+                    filename=filename,
+                    file_path=filepath,
+                    source_url=full_url
+                )
+                processed_files.append(processed_file)
+
                 logger.info(f"[{job_id}] Saved {filename}")
 
             except Exception as e:
-                logger.error(f"[{job_id}] Failed to process {src}: {e}")
+                logger.error(f"[{job_id}] Failed to process {full_url}: {e}")
                 continue
 
-        jobs.update_one(
-            {"job_id": job_id},
-            {"$set": {
-                "status": "ready",
-                "progress": 100,
-                "updated_at": datetime.utcnow(),
-                "parsed_data": images,
-                "processed_files": processed_files
-            }}
-        )
+        status = "ready" if processed_files else "failed"
+
+        try:
+            result = ParseResult(
+                job_id=job_id,
+                status=status,
+                progress=100,
+                updated_at=datetime.utcnow(),
+                parsed_data=images,
+                processed_files=processed_files
+            )
+        except Exception as e:
+            logger.error(f"[{job_id}] Validation failed: {e}")
+            jobs.update_one({"job_id": job_id}, {"$set": {"status": "failed", "progress": 100}})
+            return {"error": str(e)}
+
+        jobs.update_one({"job_id": job_id}, {"$set": result.model_dump(mode="json")})
+
         logger.info(f"[{job_id}] Finished parsing. Files: {len(processed_files)}")
-        return processed_files
+        return result.model_dump(mode="json")
 
     return parse_page

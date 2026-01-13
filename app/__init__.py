@@ -2,21 +2,9 @@ import os
 from flasgger import Swagger
 from flask import Flask
 from pymongo import MongoClient
-from celery import Celery
-from .tasks import register_task
-
-def make_celery(app: Flask):
-    celery = Celery(
-        app.import_name,
-        broker=os.getenv("REDIS_URL"),
-        backend=os.getenv("REDIS_URL"),
-    )
-    celery.conf.update(
-        task_serializer="json",
-        result_serializer="json",
-        accept_content=["json"]
-    )
-    return celery
+from app.tasks import register_task
+from .celery_app import make_celery
+from app.schemas import JobStatusResponse, ParseJobRequest, ImageUploadRequest, ProcessedFile
 
 def create_app():
     app = Flask(__name__)
@@ -56,7 +44,14 @@ def create_app():
         ]
     }
 
-    Swagger(app, config=swagger_config, template=swagger_template)
+    definitions = {
+        "JobStatus": JobStatusResponse.model_json_schema(ref_template="#/definitions/{model}"),
+        "ParseJobRequest": ParseJobRequest.model_json_schema(ref_template="#/definitions/{model}"),
+        "ImageUploadRequest": ImageUploadRequest.model_json_schema(ref_template="#/definitions/{model}"),
+        "ProcessedFile": ProcessedFile.model_json_schema(ref_template="#/definitions/{model}")
+    }
+
+    Swagger(app, config=swagger_config, template={**swagger_template, "definitions": definitions})
 
     client = MongoClient(app.config["MONGO_URI"])
     app.mongo_db = client.get_default_database()
@@ -72,3 +67,6 @@ def create_app():
         app.register_blueprint(bp, url_prefix="/api")
 
     return app
+
+flask_app = create_app()
+celery_app = flask_app.celery_app
