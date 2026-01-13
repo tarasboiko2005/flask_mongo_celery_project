@@ -7,3 +7,4 @@ flasgger==0.9.7b2
 pillow
 beautifulsoup4
 requests
+pydantic

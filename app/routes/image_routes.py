@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app
 import os, uuid
 from datetime import datetime
+from app.schemas import ImageUploadRequest
+from pydantic import ValidationError
 
 bp = Blueprint("image_jobs", __name__)
 
@@ -22,10 +24,18 @@ def upload_image():
       202:
         description: Image job created
     """
-    file = request.files["file"]
-    filename = file.filename
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"error": "file_required"}), 400
+
+    try:
+        data = ImageUploadRequest(filename=file.filename)
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 400
+
     output_dir = os.getenv("FILE_OUTPUT_DIR", "./output")
-    filepath = os.path.join(output_dir, filename)
+    os.makedirs(output_dir, exist_ok=True)
+    filepath = os.path.join(output_dir, data.filename)
     file.save(filepath)
 
     job_id = str(uuid.uuid4())
@@ -33,12 +43,12 @@ def upload_image():
         "job_id": job_id,
         "status": "queued",
         "progress": 0,
-        "filename": filename,
+        "filename": data.filename,
         "file_path": filepath,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat(),
     }
     current_app.jobs.insert_one(doc)
-    current_app.celery_app.send_task("tasks.process_image", args=[job_id, filename, filepath])
+    current_app.celery_app.send_task("tasks.process_image", args=[job_id, data.filename, filepath])
 
     return jsonify({"job_id": job_id, "status": "queued"}), 202

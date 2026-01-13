@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app
 import uuid
 from datetime import datetime
+from pydantic import ValidationError
+from app.schemas import ParseJobRequest
 
 bp = Blueprint("parse_jobs", __name__)
 
@@ -28,25 +30,25 @@ def parse_job():
       202:
         description: Parse job created
     """
-    url = request.form["url"]
-
     try:
-        limit = int(request.form.get("limit", 5))
-    except ValueError:
-        limit = 5
+        data = ParseJobRequest(
+            url=request.form.get("url"),
+            limit=request.form.get("limit")
+        )
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 400
 
     job_id = str(uuid.uuid4())
     doc = {
         "job_id": job_id,
         "status": "queued",
         "progress": 0,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
-        "url": url,
-        "limit": limit
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat(),
+        "url": str(data.url),
+        "limit": data.limit
     }
     current_app.jobs.insert_one(doc)
-
-    current_app.celery_app.send_task("tasks.parse_page", args=[job_id, url, limit])
+    current_app.celery_app.send_task("tasks.parse_page", args=[job_id, str(data.url), data.limit])
 
     return jsonify({"job_id": job_id, "status": "queued"}), 202
