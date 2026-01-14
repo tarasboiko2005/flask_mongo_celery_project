@@ -13,3 +13,4 @@ SQLAlchemy
 pydantic[email]
 flask-login
 authlib
+flask_admin

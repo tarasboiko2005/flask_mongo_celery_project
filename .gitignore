@@ -6,3 +6,4 @@ output/
 .idea/
 instance/*.db
 celerybeat-schedule
+seed.py

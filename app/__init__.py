@@ -2,14 +2,16 @@ import os
 from flasgger import Swagger
 from flask import Flask
 from pymongo import MongoClient
-from flask_login import current_user
+from flask_login import current_user, LoginManager
 from app.tasks import register_task
 from .celery_app import make_celery
 from app.schemas import JobStatusResponse, ParseJobRequest, ImageUploadRequest, ProcessedFile
 from app.db import db
-from flask_login import LoginManager
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
+from app.models import User, Job
 
 load_dotenv()
 
@@ -90,6 +92,10 @@ def create_app():
         if current_user.is_authenticated:
             return f"Welcome, {current_user.name} ({current_user.email})"
         return "Hello, please log in."
+
+    admin = Admin(app, name="Control Panel")
+    admin.add_view(ModelView(User, db.session))
+    admin.add_view(ModelView(Job, db.session))
 
     with app.app_context():
         db.create_all()
