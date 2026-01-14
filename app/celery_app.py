@@ -1,4 +1,6 @@
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 from celery import Celery
 from celery.schedules import crontab
 from app.factory import create_app
@@ -23,6 +25,15 @@ def make_celery(app):
                 return self.run(*args, **kwargs)
 
     celery.Task = ContextTask
+    handler = RotatingFileHandler("debug.log", maxBytes=1000000, backupCount=3)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger("celery")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
     return celery
 
 celery = make_celery(flask_app)

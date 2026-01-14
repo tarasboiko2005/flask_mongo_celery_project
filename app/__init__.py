@@ -1,4 +1,6 @@
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 from flasgger import Swagger
 from flask import Flask
 from pymongo import MongoClient
@@ -99,6 +101,12 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+
+    handler = RotatingFileHandler("debug.log", maxBytes=1000000, backupCount=3)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)
 
     return app
 

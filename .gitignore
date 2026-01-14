@@ -7,3 +7,4 @@ output/
 instance/*.db
 celerybeat-schedule
 seed.py
+debug.log
