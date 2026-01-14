@@ -10,3 +10,6 @@ requests
 pydantic
 Flask-SQLAlchemy
 SQLAlchemy
+pydantic[email]
+flask-login
+authlib

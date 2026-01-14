@@ -1,5 +1,6 @@
 from app.db import db
 from datetime import datetime
+from flask_login import UserMixin
 
 class Job(db.Model):
     __tablename__ = "jobs"
@@ -15,3 +16,9 @@ class Job(db.Model):
 
     def __repr__(self):
         return f"<Job {self.job_id} status={self.status} progress={self.progress}>"
+
+class User(db.Model, UserMixin):
+    __tablename__ = "users"
+    id = db.Column(db.String(128), primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(128), unique=True, nullable=False)
