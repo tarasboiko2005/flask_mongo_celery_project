@@ -13,14 +13,14 @@ def create_app():
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
     app.config["MONGO_URI"] = os.getenv("MONGO_URI")
     app.config["FILE_OUTPUT_DIR"] = os.getenv("FILE_OUTPUT_DIR", "./output")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
     Swagger(app)
 
     client = MongoClient(app.config["MONGO_URI"])
-    app.mongo_db = client.get_default_database()
+    app.mongo_db = client["flask_jobs"]
     app.jobs = app.mongo_db["jobs"]
 
     os.makedirs(app.config["FILE_OUTPUT_DIR"], exist_ok=True)

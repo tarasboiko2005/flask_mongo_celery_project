@@ -9,6 +9,9 @@ from app.schemas import JobStatusResponse, ParseJobRequest, ImageUploadRequest, 
 from app.db import db
 from flask_login import LoginManager
 from authlib.integrations.flask_client import OAuth
+from dotenv import load_dotenv
+
+load_dotenv()
 
 login_manager = LoginManager()
 oauth = OAuth()
@@ -17,15 +20,13 @@ def create_app():
     app = Flask(__name__)
 
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
-
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = False
     app.config["PREFERRED_URL_SCHEME"] = "http"
 
     app.config["MONGO_URI"] = os.getenv("MONGO_URI")
     app.config["FILE_OUTPUT_DIR"] = os.getenv("FILE_OUTPUT_DIR", "./output")
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
@@ -44,34 +45,23 @@ def create_app():
         "specs_route": "/apidocs/",
         "title": "Image & Parsing Job API"
     }
-
     swagger_template = {
         "swagger": "2.0",
-        "info": {
-            "title": "Image & Parsing Job API",
-            "version": "1.0.0"
-        },
+        "info": {"title": "Image & Parsing Job API", "version": "1.0.0"},
         "basePath": "/api",
         "schemes": ["http"],
-        "tags": [
-            {
-                "name": "Jobs",
-                "description": "Job endpoints"
-            }
-        ]
+        "tags": [{"name": "Jobs", "description": "Job endpoints"}]
     }
-
     definitions = {
         "JobStatus": JobStatusResponse.model_json_schema(ref_template="#/definitions/{model}"),
         "ParseJobRequest": ParseJobRequest.model_json_schema(ref_template="#/definitions/{model}"),
         "ImageUploadRequest": ImageUploadRequest.model_json_schema(ref_template="#/definitions/{model}"),
         "ProcessedFile": ProcessedFile.model_json_schema(ref_template="#/definitions/{model}")
     }
-
     Swagger(app, config=swagger_config, template={**swagger_template, "definitions": definitions})
 
     client = MongoClient(app.config["MONGO_URI"])
-    app.mongo_db = client.get_default_database()
+    app.mongo_db = client["flask_jobs"]
     app.jobs = app.mongo_db["jobs"]
 
     os.makedirs(app.config["FILE_OUTPUT_DIR"], exist_ok=True)
@@ -80,7 +70,6 @@ def create_app():
 
     login_manager.init_app(app)
     oauth.init_app(app)
-
     oauth.register(
         name="google",
         client_id=os.getenv("GOOGLE_CLIENT_ID"),
