@@ -14,6 +14,7 @@ from flask_admin.contrib.sqla import ModelView
 from app.models import User, Job
 from app.settings import Settings
 from flask_migrate import Migrate
+from app.routes.health import health_bp
 
 load_dotenv()
 
@@ -48,6 +49,7 @@ def create_app():
     login_manager.init_app(app)
     oauth.init_app(app)
     oauth.register(**Settings.GOOGLE_OAUTH_CONFIG)
+    app.register_blueprint(health_bp, url_prefix="/api")
 
     from .routes import blueprints
     for bp in blueprints:

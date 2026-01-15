@@ -69,6 +69,8 @@ class Settings:
 
     # Redis
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
     # Celery
     DAILY_JOB_ID = os.getenv("DAILY_JOB_ID", "job_daily")

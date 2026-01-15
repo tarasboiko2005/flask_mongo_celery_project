@@ -2,9 +2,11 @@ import os
 from flask import Flask
 from flasgger import Swagger
 from pymongo import MongoClient
-from .settings import Settings
-from .routes import blueprints
-from .db import db
+
+from app.settings import Settings
+from app.routes import blueprints
+from app.db import db
+from app.routes.health import health_bp
 
 def create_app():
     app = Flask(__name__)
@@ -12,7 +14,8 @@ def create_app():
 
     db.init_app(app)
 
-    Swagger(app, config=Settings.SWAGGER_CONFIG,
+    Swagger(app,
+            config=Settings.SWAGGER_CONFIG,
             template={**Settings.SWAGGER_TEMPLATE})
 
     client = MongoClient(app.config["MONGO_URI"])
@@ -20,6 +23,8 @@ def create_app():
     app.jobs = app.mongo_db[Settings.MONGO_COLLECTION_NAME]
 
     os.makedirs(app.config["FILE_OUTPUT_DIR"], exist_ok=True)
+
+    app.register_blueprint(health_bp, url_prefix="/api")
 
     for bp in blueprints:
         app.register_blueprint(bp, url_prefix="/api")
