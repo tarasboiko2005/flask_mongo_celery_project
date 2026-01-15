@@ -2,6 +2,7 @@ services:
   web:
     build: .
     container_name: flask_app
+    command: flask run --host=0.0.0.0 --port=8000
     env_file: .env
     ports:
       - "8000:8000"
@@ -11,26 +12,13 @@ services:
     volumes:
       - .:/app
 
-  mongo:
-    image: mongo:6
-    container_name: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-  redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
-
   worker:
     build: .
     container_name: celery_worker
-    command: celery -A app.celery_app worker --loglevel=INFO
+    command: celery -A app.celery_app.celery worker --loglevel=INFO
     env_file: .env
     depends_on:
+      - web
       - mongo
       - redis
     volumes:
@@ -39,13 +27,28 @@ services:
   beat:
     build: .
     container_name: celery_beat
-    command: celery -A app.celery_app beat --loglevel=INFO
+    command: celery -A app.celery_app.celery beat --loglevel=INFO
     env_file: .env
     depends_on:
+      - web
       - mongo
       - redis
     volumes:
       - .:/app
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
 
 volumes:
   mongo_data:

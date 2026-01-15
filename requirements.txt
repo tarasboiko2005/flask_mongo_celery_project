@@ -14,3 +14,4 @@ pydantic[email]
 flask-login
 authlib
 flask_admin
+flask-migrate
