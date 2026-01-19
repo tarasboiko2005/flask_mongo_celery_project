@@ -1,26 +1,41 @@
-from PIL import Image
 import os
+import logging
 from datetime import datetime
 from pymongo import MongoClient
-import logging
+from PIL import Image
+
 from app.schemas import JobStatusResponse
 from app.repositories.job_repository import update_job
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def register_image_tasks(celery):
-    @celery.task(name="tasks.process_image")
-    def process_image(job_id: str, filename: str, filepath: str):
+
+    @celery.task(name="tasks.process_image", bind=True)
+    def process_image(self, job_id: str, filename: str, filepath: str):
+
         client = MongoClient(os.getenv("MONGO_URI"))
         db = client.get_default_database()
         jobs = db["jobs"]
 
         jobs.update_one(
             {"job_id": job_id},
-            {"$set": {"status": "processing", "progress": 25, "updated_at": datetime.utcnow()}}
+            {"$set": {
+                "status": "processing",
+                "progress": 25,
+                "updated_at": datetime.utcnow()
+            }}
         )
-        update_job(job_id, status="processing", progress=25, updated_at=datetime.utcnow())
+
+        update_job(
+            job_id,
+            status="processing",
+            progress=25,
+            updated_at=datetime.utcnow()
+        )
+
         logger.info(f"[{job_id}] Start processing {filename}")
 
         try:
@@ -45,20 +60,54 @@ def register_image_tasks(celery):
                 file_path=new_filepath
             )
 
-            jobs.update_one({"job_id": job_id}, {"$set": result.model_dump(mode="json")})
-            update_job(job_id, status="ready", progress=100, updated_at=datetime.utcnow(),
-                       filename=new_filename, file_path=new_filepath)
+            jobs.update_one(
+                {"job_id": job_id},
+                {"$set": result.model_dump(mode="json")}
+            )
+
+            update_job(
+                job_id,
+                status="ready",
+                progress=100,
+                updated_at=datetime.utcnow(),
+                filename=new_filename,
+                file_path=new_filepath
+            )
+
+            # from app.rag.vector_store import get_vectorstore, add_metadata
+            # vectorstore = get_vectorstore()
+            # metadata_text = (
+            #     f"Image {filename} converted to grayscale "
+            #     f"at {datetime.utcnow().isoformat()}"
+            # )
+            # add_metadata(
+            #     vectorstore,
+            #     metadata_text,
+            #     {"job_id": job_id, "file": new_filename}
+            # )
 
             logger.info(f"[{job_id}] Finished processing")
             return result.model_dump(mode="json")
 
         except Exception as e:
-            logger.error(f"[{job_id}] Failed to process image: {e}")
+            logger.exception(f"[{job_id}] Failed to process image")
+
             jobs.update_one(
                 {"job_id": job_id},
-                {"$set": {"status": "failed", "progress": 100, "updated_at": datetime.utcnow()}}
+                {"$set": {
+                    "status": "failed",
+                    "progress": 100,
+                    "updated_at": datetime.utcnow()
+                }}
             )
-            update_job(job_id, status="failed", progress=100, updated_at=datetime.utcnow())
+
+            update_job(
+                job_id,
+                status="failed",
+                progress=100,
+                updated_at=datetime.utcnow()
+            )
+
             return {"error": str(e)}
 
     return process_image
