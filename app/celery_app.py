@@ -1,16 +1,20 @@
-import os
 from celery import Celery
-from flask import Flask
+from app.factory import create_app
+from app.settings import Settings
 
-def make_celery(app: Flask):
-    celery = Celery(
-        app.import_name,
-        broker=os.getenv("REDIS_URL"),
-        backend=os.getenv("REDIS_URL"),
-    )
-    celery.conf.update(
-        task_serializer="json",
-        result_serializer="json",
-        accept_content=["json"]
-    )
+flask_app = create_app()
+
+def make_celery(app):
+    celery = Celery(app.import_name)
+    celery.conf.update(Settings.CELERY_CONFIG)
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
+    Settings.setup_celery_logging()
     return celery
+
+celery = make_celery(flask_app)

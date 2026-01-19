@@ -8,3 +8,10 @@ pillow
 beautifulsoup4
 requests
 pydantic
+Flask-SQLAlchemy
+SQLAlchemy
+pydantic[email]
+flask-login
+authlib
+flask_admin
+flask-migrate

@@ -4,3 +4,7 @@ __pycache__/
 .env
 output/
 .idea/
+instance/*.db
+celerybeat-schedule
+seed.py
+debug.log
