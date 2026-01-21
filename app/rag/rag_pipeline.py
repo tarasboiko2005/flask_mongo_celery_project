@@ -4,7 +4,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from app.rag.vector_store import get_vectorstore
 from app.rag.embeddings import get_llm
 
-
 def query_history(question: str) -> str:
     vectorstore = get_vectorstore()
     llm = get_llm()
