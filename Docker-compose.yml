@@ -36,6 +36,21 @@ services:
     volumes:
       - .:/app
 
+  mcp:
+    build: .
+    container_name: mcp_server
+    command: python -m app.mcp.server
+    env_file: .env
+    depends_on:
+      - web
+      - worker
+      - redis
+      - mongo
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/app
+
   redis:
     image: redis:7
     container_name: redis

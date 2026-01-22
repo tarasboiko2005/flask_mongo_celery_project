@@ -18,6 +18,7 @@ from app.routes.health import health_bp
 from app.rag.rag_pipeline import query_history
 from app.mcp.agent import run_agent
 from app.routes.agent import agent_bp
+from flask_cors import CORS
 
 load_dotenv()
 login_manager = LoginManager()
@@ -29,7 +30,7 @@ def create_app():
     app.config.from_object(Settings)
     db.init_app(app)
     migrate.init_app(app, db)
-
+    CORS(app)
     definitions = {
         "JobStatus": JobStatusResponse.model_json_schema(ref_template="#/definitions/{model}"),
         "ParseJobRequest": ParseJobRequest.model_json_schema(ref_template="#/definitions/{model}"),
