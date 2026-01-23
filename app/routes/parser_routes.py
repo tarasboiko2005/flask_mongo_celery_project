@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from pydantic import ValidationError
 from app.schemas import ParseJobRequest
+from app.tasks.parser_tasks import parse_page
 
 bp = Blueprint("parse_jobs", __name__)
 
@@ -49,6 +50,5 @@ def parse_job():
         "limit": data.limit
     }
     current_app.jobs.insert_one(doc)
-    current_app.celery_app.send_task("tasks.parse_page", args=[job_id, str(data.url), data.limit])
-
+    parse_page.delay(job_id, str(data.url), data.limit)
     return jsonify({"job_id": job_id, "status": "queued"}), 202

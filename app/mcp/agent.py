@@ -13,18 +13,29 @@ def convert_image_wrapper(query: str):
     return convert_tool(filename, filepath)
 
 def parse_page_wrapper(query: str):
-    return parse_tool(job_id="agent-job", url=query, limit=5)
+    limit = 5
+    result = parse_tool(url=query, limit=limit)
+
+    return {
+        "message": "Parsing end",
+        "job_id": result.get("job_id"),
+        "status": result.get("status", "unknown"),
+        "file": result.get("file", "N/A"),
+        "images_found": result.get("images", [])
+    }
 
 tools = [
     Tool(
         name="convert_image",
         func=convert_image_wrapper,
-        description="Convert an image to grayscale. Input format: 'filename|filepath'"
+        description="Convert an image to grayscale. Input format: 'filename|filepath'",
+        return_direct=True
     ),
     Tool(
         name="parse_page",
         func=parse_page_wrapper,
-        description="Parse images from a webpage. Input: URL string"
+        description="Parse images from a webpage. Input: URL string",
+        return_direct=True
     )
 ]
 
@@ -33,7 +44,8 @@ agent = initialize_agent(
     llm,
     agent="zero-shot-react-description",
     handle_parsing_errors=True,
-    verbose=True
+    verbose=True,
+    max_iterations=2
 )
 
 def run_agent(query: str):

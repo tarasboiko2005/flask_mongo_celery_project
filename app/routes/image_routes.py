@@ -3,6 +3,7 @@ import os, uuid
 from datetime import datetime
 from app.schemas import ImageUploadRequest
 from pydantic import ValidationError
+from app.tasks.image_tasks import process_image
 
 bp = Blueprint("image_jobs", __name__)
 
@@ -49,6 +50,6 @@ def upload_image():
         "updated_at": datetime.utcnow().isoformat(),
     }
     current_app.jobs.insert_one(doc)
-    current_app.celery_app.send_task("tasks.process_image", args=[job_id, data.filename, filepath])
+    process_image.delay(job_id, data.filename, filepath)
 
     return jsonify({"job_id": job_id, "status": "queued"}), 202
