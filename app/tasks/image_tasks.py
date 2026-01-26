@@ -6,14 +6,12 @@ from PIL import Image
 from celery import shared_task
 
 from app.schemas import JobStatusResponse
-from app.repositories.job_repository import update_job
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @shared_task(name="tasks.process_image", bind=True)
 def process_image(self, job_id: str, filename: str, filepath: str):
-
     client = MongoClient(os.getenv("MONGO_URI"))
     db = client.get_default_database()
     jobs = db["jobs"]
@@ -27,18 +25,10 @@ def process_image(self, job_id: str, filename: str, filepath: str):
         }}
     )
 
-    update_job(
-        job_id,
-        status="processing",
-        progress=25,
-        updated_at=datetime.utcnow()
-    )
-
     logger.info(f"[{job_id}] Start processing {filename}")
 
     try:
-        img = Image.open(filepath)
-        img = img.convert("L")
+        img = Image.open(filepath).convert("L")
 
         output_dir = os.getenv("FILE_OUTPUT_DIR", "./output")
         os.makedirs(output_dir, exist_ok=True)
@@ -63,15 +53,6 @@ def process_image(self, job_id: str, filename: str, filepath: str):
             {"$set": result.model_dump(mode="json")}
         )
 
-        update_job(
-            job_id,
-            status="ready",
-            progress=100,
-            updated_at=datetime.utcnow(),
-            filename=new_filename,
-            file_path=new_filepath
-        )
-
         logger.info(f"[{job_id}] Finished processing")
         return result.model_dump(mode="json")
 
@@ -85,13 +66,6 @@ def process_image(self, job_id: str, filename: str, filepath: str):
                 "progress": 100,
                 "updated_at": datetime.utcnow()
             }}
-        )
-
-        update_job(
-            job_id,
-            status="failed",
-            progress=100,
-            updated_at=datetime.utcnow()
         )
 
         return {"error": str(e)}
