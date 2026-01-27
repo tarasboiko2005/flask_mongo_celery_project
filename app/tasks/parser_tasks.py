@@ -1,12 +1,13 @@
-from bs4 import BeautifulSoup
-import requests, os, uuid, logging
+import os, uuid, logging, requests
 from datetime import datetime
 from pymongo import MongoClient
+from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 from urllib.parse import urljoin
 from app.schemas import ParsedImage, ParseResult
 from app.repositories.job_repository import update_job
+from app.rag.vector_store import add_metadata
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,9 +23,7 @@ def register_parser_tasks(celery):
             {"job_id": job_id},
             {"$set": {"status": "processing", "progress": 25, "updated_at": datetime.utcnow()}}
         )
-
         update_job(job_id, status="processing", progress=25, updated_at=datetime.utcnow())
-
         logger.info(f"[{job_id}] Start parsing {url}")
 
         try:
@@ -37,7 +36,6 @@ def register_parser_tasks(celery):
             return {"error": str(e)}
 
         soup = BeautifulSoup(response.text, "html.parser")
-
         images = []
         for img in soup.find_all("img"):
             if "src" in img.attrs:
@@ -74,6 +72,9 @@ def register_parser_tasks(celery):
                 )
                 processed_files.append(processed_file)
 
+                metadata = f"Parsed image {filename} from {full_url} at {datetime.utcnow()}"
+                add_metadata(metadata)
+
                 logger.info(f"[{job_id}] Saved {filename}")
 
             except Exception as e:
@@ -98,7 +99,6 @@ def register_parser_tasks(celery):
             return {"error": str(e)}
 
         jobs.update_one({"job_id": job_id}, {"$set": result.model_dump(mode="json")})
-
         update_job(job_id, status=status, progress=100, updated_at=datetime.utcnow())
 
         logger.info(f"[{job_id}] Finished parsing. Files: {len(processed_files)}")

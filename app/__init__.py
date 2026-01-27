@@ -1,6 +1,6 @@
 import os
 from flasgger import Swagger
-from flask import Flask
+from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from flask_login import current_user, LoginManager
 from app.tasks import register_task
@@ -15,12 +15,14 @@ from app.models import User, Job
 from app.settings import Settings
 from flask_migrate import Migrate
 from app.routes.health import health_bp
+from app.rag.rag_pipeline import query_history
+from app.mcp.agent import run_agent
+from app.routes.agent import agent_bp
+from flask_cors import CORS
 
 load_dotenv()
-
 login_manager = LoginManager()
 oauth = OAuth()
-
 migrate = Migrate()
 
 def create_app():
@@ -28,6 +30,8 @@ def create_app():
     app.config.from_object(Settings)
     db.init_app(app)
     migrate.init_app(app, db)
+
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     definitions = {
         "JobStatus": JobStatusResponse.model_json_schema(ref_template="#/definitions/{model}"),
@@ -58,11 +62,25 @@ def create_app():
     from .routes.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
+    app.register_blueprint(agent_bp, url_prefix="/api")
+
     @app.route("/")
     def index():
         if current_user.is_authenticated:
             return f"Welcome, {current_user.name} ({current_user.email})"
         return "Hello, please log in."
+
+    @app.route("/rag", methods=["POST"])
+    def rag_query():
+        question = request.json.get("question")
+        answer = query_history(question)
+        return jsonify({"answer": answer})
+
+    @app.route("/agent", methods=["POST"])
+    def agent_query():
+        query = request.json.get("query")
+        answer = run_agent(query)
+        return jsonify({"answer": answer})
 
     admin = Admin(app, name="Control Panel")
     admin.add_view(ModelView(User, db.session))
