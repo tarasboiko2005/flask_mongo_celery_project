@@ -22,3 +22,4 @@ langchain-google-genai
 google-generativeai
 mcp
 flask_cors
+gunicorn

@@ -6,7 +6,6 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libffi-dev \
     libssl-dev \
-    libpq-dev \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
@@ -15,4 +14,4 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 COPY . .
-CMD ["python", "run.py"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "app:create_app()"]
