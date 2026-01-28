@@ -20,7 +20,7 @@ class Job(db.Model):
 class User(db.Model, UserMixin):
     __tablename__ = "users"
 
-    id = db.Column(db.String(64), primary_key=True)   # ← тепер String
+    id = db.Column(db.String(64), primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(128), unique=True, nullable=False)
 

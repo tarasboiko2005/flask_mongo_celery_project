@@ -46,7 +46,7 @@ class Settings:
         ],
         "static_url_path": "/flasgger_static",
         "swagger_ui": True,
-        "specs_route": "/apidocs/",
+        "specs_route": "/api/docs/",
         "title": "Image & Parsing Job API",
         "uiversion": 3
     }
@@ -102,3 +102,7 @@ class Settings:
         logger = logging.getLogger("celery")
         logger.setLevel(logging.DEBUG)
         logger.addHandler(handler)
+
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
