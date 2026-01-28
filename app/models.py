@@ -1,10 +1,9 @@
-from app.db import db
+from app.extensions import db
 from datetime import datetime
 from flask_login import UserMixin
 
 class Job(db.Model):
     __tablename__ = "jobs"
-
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     job_id = db.Column(db.String(64), unique=True, nullable=False)
     status = db.Column(db.String(32), nullable=False, default="pending")
@@ -19,7 +18,6 @@ class Job(db.Model):
 
 class User(db.Model, UserMixin):
     __tablename__ = "users"
-
     id = db.Column(db.String(64), primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(128), unique=True, nullable=False)

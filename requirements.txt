@@ -24,3 +24,4 @@ mcp
 flask_cors
 gunicorn
 langchain_text_splitters
+Flask-Mail

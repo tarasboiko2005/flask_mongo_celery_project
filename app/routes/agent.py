@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-import os, uuid, json
+import os, uuid
 from datetime import datetime
 from app.mcp.agent import run_agent
 from app.tasks.parser_tasks import parse_page
