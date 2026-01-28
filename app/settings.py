@@ -46,7 +46,7 @@ class Settings:
         ],
         "static_url_path": "/flasgger_static",
         "swagger_ui": True,
-        "specs_route": "/apidocs/",
+        "specs_route": "/api/docs/",
         "title": "Image & Parsing Job API",
         "uiversion": 3
     }

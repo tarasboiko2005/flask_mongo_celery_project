@@ -19,7 +19,7 @@ langchain-community==0.2.15
 faiss-cpu==1.7.4
 openai==1.30.0
 langchain-google-genai
-google-generativeai
+google-genai
 mcp
 flask_cors
 gunicorn

@@ -12,11 +12,13 @@ _lock = Lock()
 
 def _create_vectorstore() -> FAISS:
     embeddings = get_embeddings()
-    dimension = 768
+    test_vec = embeddings.embed_query("dimension check")
+    dimension = len(test_vec)
+
     index = faiss.IndexFlatL2(dimension)
     docstore = InMemoryDocstore({})
 
-    logger.info("FAISS vectorstore initialized")
+    logger.info(f"FAISS vectorstore initialized with dimension {dimension}")
 
     return FAISS(
         embedding_function=embeddings,
@@ -24,7 +26,6 @@ def _create_vectorstore() -> FAISS:
         docstore=docstore,
         index_to_docstore_id={}
     )
-
 
 def get_vectorstore() -> FAISS:
     global _vectorstore

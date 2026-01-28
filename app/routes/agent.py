@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-import os, uuid
+import os, uuid, json
 from datetime import datetime
 from app.mcp.agent import run_agent
 from app.tasks.parser_tasks import parse_page
@@ -112,4 +112,6 @@ def post_agent():
         }), 200
 
     except Exception as e:
+        import traceback
+        current_app.logger.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
