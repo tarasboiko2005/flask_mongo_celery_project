@@ -3,6 +3,7 @@ import logging
 from threading import Lock
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from .embeddings import get_embeddings
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,6 @@ def get_vectorstore() -> FAISS:
 
     return _vectorstore
 
-
 def add_metadata(vectorstore: FAISS, text: str, metadata: dict | None = None):
     if not metadata:
         metadata = {}
@@ -48,3 +48,16 @@ def add_metadata(vectorstore: FAISS, text: str, metadata: dict | None = None):
         texts=[text],
         metadatas=[metadata]
     )
+
+def add_documents(vectorstore: FAISS, docs: list, chunk_size: int = 1000, chunk_overlap: int = 200):
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
+    )
+    chunks = splitter.split_documents(docs)
+    logger.info(f"Adding {len(chunks)} chunks to vectorstore")
+    vectorstore.add_documents(chunks)
+
+def search(vectorstore: FAISS, query: str, k: int = 5):
+    logger.info(f"Searching vectorstore for query: {query}")
+    return vectorstore.similarity_search(query, k=k)
