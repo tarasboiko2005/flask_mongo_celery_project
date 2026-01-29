@@ -3,6 +3,10 @@ from app.extensions import mail
 from flask import current_app
 
 def send_email(subject, recipients, body):
+    recipients = [r for r in recipients if r]
+    if not recipients:
+        raise ValueError("No valid recipient emails provided")
+
     print("=== Sending email ===")
     print("Recipients:", recipients)
     print("Subject:", subject)
@@ -14,6 +18,10 @@ def send_email(subject, recipients, body):
         recipients=recipients,
         body=body
     )
-    mail.send(msg)
-
-    print("=== Email queued successfully ===")
+    try:
+        mail.send(msg)
+        print("=== Email sent successfully ===")
+    except Exception as e:
+        print("=== Failed to send email ===")
+        print("Error:", e)
+        raise
