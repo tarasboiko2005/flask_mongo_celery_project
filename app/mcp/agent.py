@@ -1,7 +1,7 @@
 import json
 import redis
-from langchain.agents import initialize_agent
-from langchain.tools import Tool
+from langchain_classic.agents import initialize_agent
+from langchain_classic.tools import Tool
 from app.mcp.tools import convert_tool, parse_tool
 from app.rag.embeddings import get_llm
 from app.rag.rag_pipeline import query_history

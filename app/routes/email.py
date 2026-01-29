@@ -17,18 +17,12 @@ def send_job_report_endpoint():
         schema:
           type: object
           properties:
-            user_email:
+            user_id:
               type: string
-              example: "tarasboiko2005@gmail.com"
+              example: "42"
             job_id:
               type: string
               example: "123"
-            status:
-              type: string
-              example: "completed"
-            details:
-              type: string
-              example: "Everything went well."
     responses:
       202:
         description: Email task queued
@@ -40,9 +34,7 @@ def send_job_report_endpoint():
               example: "Email task queued"
     """
     data = request.get_json()
-    user_email = data.get("user_email")
     job_id = data.get("job_id")
-    status = data.get("status")
-    details = data.get("details")
-    send_job_report.delay(user_email, job_id, status, details)
+    user_id = data.get("user_id")
+    send_job_report.delay(job_id, user_id)
     return jsonify({"message": "Email task queued"}), 202
