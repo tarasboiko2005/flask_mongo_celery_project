@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 import os, uuid
 from datetime import datetime
+from flask_login import current_user
 from app.mcp.agent import run_agent
 from app.tasks.parser_tasks import parse_page
 from app.tasks.image_tasks import process_image
@@ -50,9 +51,7 @@ def post_agent():
         os.makedirs(output_dir, exist_ok=True)
         filepath = os.path.join(output_dir, filename)
         file.save(filepath)
-
         job_id = f"agent-image-{uuid.uuid4().hex}"
-
         current_app.jobs.insert_one({
             "job_id": job_id,
             "status": "queued",
@@ -60,10 +59,16 @@ def post_agent():
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "filename": filename,
-            "file_path": filepath
+            "file_path": filepath,
+            "user_email": getattr(current_user, "email", None)  # зберігаємо email
         })
 
-        process_image.delay(job_id=job_id, filename=filename, filepath=filepath)
+        process_image.delay(
+            job_id=job_id,
+            filename=filename,
+            filepath=filepath,
+            user_email=getattr(current_user, "email", None)
+        )
 
         return jsonify({
             "input": filename,
@@ -91,10 +96,16 @@ def post_agent():
                 "progress": 0,
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
-                "url": query
+                "url": query,
+                "user_email": getattr(current_user, "email", None)
             })
 
-            parse_page.delay(job_id=job_id, url=query, limit=5)
+            parse_page.delay(
+                job_id=job_id,
+                url=query,
+                user_email=getattr(current_user, "email", None),
+                limit=5
+            )
 
             return jsonify({
                 "input": query,

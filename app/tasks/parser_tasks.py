@@ -8,11 +8,12 @@ from io import BytesIO
 from urllib.parse import urljoin
 from app.schemas import ParsedImage, ParseResult
 from app.rag.vector_store import add_metadata
+from app.tasks.email_tasks import send_job_report
 
 logger = logging.getLogger(__name__)
 
 @shared_task(name="tasks.parse_page")
-def parse_page(job_id: str, url: str, limit: int = 5):
+def parse_page(job_id: str, url: str, user_email: str, limit: int = 5):
     client = MongoClient(os.getenv("MONGO_URI"))
     db = client.get_default_database()
     jobs = db["jobs"]
@@ -26,11 +27,10 @@ def parse_page(job_id: str, url: str, limit: int = 5):
         response.raise_for_status()
     except Exception as e:
         jobs.update_one({"job_id": job_id}, {"$set": {"status": "failed", "progress": 100}})
+        send_job_report.delay(user_email, job_id, "failed", f"Error fetching {url}: {str(e)}")
         return {"error": str(e)}
-
     soup = BeautifulSoup(response.text, "html.parser")
     images = [urljoin(url, img["src"]) for img in soup.find_all("img") if "src" in img.attrs][:limit]
-
     processed_files = []
     output_dir = os.getenv("FILE_OUTPUT_DIR", "./output")
     os.makedirs(output_dir, exist_ok=True)
@@ -65,4 +65,8 @@ def parse_page(job_id: str, url: str, limit: int = 5):
     )
 
     jobs.update_one({"job_id": job_id}, {"$set": result.model_dump(mode="json")})
+    if status == "ready":
+        send_job_report.delay(user_email, job_id, "ready", f"Parsed {len(processed_files)} images from {url}")
+    else:
+        send_job_report.delay(user_email, job_id, "failed", f"No images could be processed from {url}")
     return result.model_dump(mode="json")
