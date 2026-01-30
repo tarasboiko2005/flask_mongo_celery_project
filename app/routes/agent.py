@@ -60,7 +60,7 @@ def post_agent():
             "updated_at": datetime.utcnow(),
             "filename": filename,
             "file_path": filepath,
-            "user_email": getattr(current_user, "email", None)  # зберігаємо email
+            "user_email": getattr(current_user, "email", None)
         })
 
         process_image.delay(

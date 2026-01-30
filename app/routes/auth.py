@@ -1,4 +1,6 @@
-from flask import Blueprint, redirect, url_for, session
+import jwt
+import datetime
+from flask import Blueprint, redirect, url_for, session, jsonify, request, current_app
 from flask_login import login_user, logout_user, current_user
 from app.factory import oauth, db, login_manager
 from app.models import User
@@ -8,6 +10,16 @@ auth_bp = Blueprint("auth", __name__)
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
+
+def create_jwt(user):
+    payload = {
+        "sub": user.id,
+        "email": user.email,
+        "name": user.name,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    }
+    token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
+    return token
 
 @auth_bp.route("/login")
 def login():
@@ -35,10 +47,24 @@ def authorize():
         db.session.commit()
 
     login_user(user)
-    return redirect("/")
+    jwt_token = create_jwt(user)
+    return jsonify({"jwt": jwt_token})
 
 @auth_bp.route("/logout")
 def logout():
     logout_user()
     session.clear()
     return redirect("/")
+
+def verify_jwt():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
