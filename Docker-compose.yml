@@ -2,7 +2,7 @@ services:
   web:
     build: .
     container_name: flask_app
-    command: gunicorn -w 4 -b 0.0.0.0:8000 "app:create_app()"
+    command: gunicorn -w 2 -b 0.0.0.0:8000 wsgi:app
     env_file: .env
     ports:
       - "8000:8000"
@@ -15,7 +15,7 @@ services:
   worker:
     build: .
     container_name: celery_worker
-    command: celery -A app.celery_app.celery_app worker --loglevel=INFO
+    command: celery -A app.extensions.celery worker --loglevel=INFO
     env_file: .env
     depends_on:
       - web
@@ -27,7 +27,7 @@ services:
   beat:
     build: .
     container_name: celery_beat
-    command: celery -A app.celery_app.celery_app beat --loglevel=INFO
+    command: celery -A app.extensions.celery beat --loglevel=INFO
     env_file: .env
     depends_on:
       - web
@@ -64,6 +64,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   mongo_data:

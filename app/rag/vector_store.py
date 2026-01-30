@@ -3,7 +3,7 @@ import logging
 from threading import Lock
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
 from .embeddings import get_embeddings
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,6 @@ def add_metadata(vectorstore: FAISS, text: str, metadata: dict | None = None):
         metadata = {}
 
     logger.info("Adding metadata to vectorstore")
-
     vectorstore.add_texts(
         texts=[text],
         metadatas=[metadata]

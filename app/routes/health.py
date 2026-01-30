@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from app.db import db
+from app.extensions import db
 import redis
 from pymongo import MongoClient
 from app.settings import Settings

@@ -1,5 +1,5 @@
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains import create_retrieval_chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from app.rag.vector_store import get_vectorstore
 from app.rag.embeddings import get_llm
 from app.rag.prompt import rag_prompt

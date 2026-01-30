@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
@@ -38,3 +38,9 @@ class ParseResult(BaseModel):
     parsed_data: List[HttpUrl]
     processed_files: List[ParsedImage]
     updated_at: datetime
+
+class SendJobReportRequest(BaseModel):
+    user_email: EmailStr
+    job_id: str
+    status: str
+    details: str
