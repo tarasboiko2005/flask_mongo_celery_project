@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @shared_task(name="tasks.process_image", bind=True)
-def process_image(self, job_id: str, filename: str, filepath: str, user_email: str):
+def process_image(self, job_id: str, filename: str, filepath: str, user_email: str | None = None):
     client = MongoClient(os.getenv("MONGO_URI"))
     db = client.get_default_database()
     jobs = db["jobs"]
@@ -51,12 +51,13 @@ def process_image(self, job_id: str, filename: str, filepath: str, user_email: s
         )
 
         logger.info(f"[{job_id}] Finished processing")
-        send_job_report.delay(
-            user_email,
-            job_id,
-            "ready",
-            f"Image {filename} processed successfully and saved as {new_filename}"
-        )
+        if user_email:
+            send_job_report.delay(
+                user_email,
+                job_id,
+                "ready",
+                f"Image {filename} processed successfully and saved as {new_filename}"
+            )
         return result.model_dump(mode="json")
 
     except Exception as e:
@@ -70,11 +71,12 @@ def process_image(self, job_id: str, filename: str, filepath: str, user_email: s
                 "updated_at": datetime.utcnow()
             }}
         )
-        send_job_report.delay(
-            user_email,
-            job_id,
-            "failed",
-            f"Error while processing {filename}: {str(e)}"
-        )
+        if user_email:
+            send_job_report.delay(
+                user_email,
+                job_id,
+                "failed",
+                f"Error while processing {filename}: {str(e)}"
+            )
 
         return {"error": str(e)}

@@ -76,10 +76,9 @@ class Settings:
     DAILY_JOB_ID = os.getenv("DAILY_JOB_ID", "job_daily")
     PARSER_URL = os.getenv("PARSER_URL", "https://www.python.org")
     PARSER_LIMIT = int(os.getenv("PARSER_LIMIT", "5"))
+    DAILY_JOB_USER_EMAIL = os.getenv("DAILY_JOB_USER_EMAIL", os.getenv("MAIL_DEFAULT_SENDER", "test@example.com"))
 
     CELERY_CONFIG = {
-        "broker_url": REDIS_URL,
-        "result_backend": REDIS_URL,
         "task_serializer": "json",
         "result_serializer": "json",
         "accept_content": ["json"],
@@ -87,7 +86,7 @@ class Settings:
             "parse-page-every-morning": {
                 "task": "tasks.parse_page",
                 "schedule": crontab(hour=7, minute=0),
-                "args": (DAILY_JOB_ID, PARSER_URL, PARSER_LIMIT),
+                "args": (DAILY_JOB_ID, PARSER_URL, DAILY_JOB_USER_EMAIL, PARSER_LIMIT),
             },
         },
     }

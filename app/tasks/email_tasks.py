@@ -1,8 +1,5 @@
 from app.utils.email import send_email
 from app.extensions import celery
-import os
-
-print("MAIL_PASSWORD in Celery:", os.getenv("MAIL_PASSWORD"))
 
 @celery.task
 def send_job_report(user_email, job_id, status=None, details=None):

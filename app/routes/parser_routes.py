@@ -50,5 +50,5 @@ def parse_job():
         "limit": data.limit
     }
     current_app.jobs.insert_one(doc)
-    parse_page.delay(job_id, str(data.url), data.limit)
+    parse_page.delay(job_id=job_id, url=str(data.url), limit=data.limit)
     return jsonify({"job_id": job_id, "status": "queued"}), 202
