@@ -4,7 +4,7 @@ import jwt
 from flask import Blueprint, current_app, jsonify, redirect, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 
-from app.factory import db, login_manager, oauth
+from app.extensions import db, login_manager, oauth
 from app.models import User
 
 auth_bp = Blueprint("auth", __name__)

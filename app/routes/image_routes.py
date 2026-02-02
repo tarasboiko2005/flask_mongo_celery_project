@@ -25,6 +25,11 @@ def upload_image():
         in: formData
         type: file
         required: true
+      - name: user_email
+        in: formData
+        type: string
+        required: false
+        description: Email to send the job report to
     responses:
       202:
         description: Image job created
@@ -53,7 +58,12 @@ def upload_image():
         "created_at": datetime.utcnow().isoformat(),
         "updated_at": datetime.utcnow().isoformat(),
     }
+    user_email = request.form.get("user_email")
+    if user_email:
+        doc["user_email"] = user_email
     current_app.jobs.insert_one(doc)
-    process_image.delay(job_id, data.filename, filepath)
+    process_image.delay(
+        job_id=job_id, filename=data.filename, filepath=filepath, user_email=user_email
+    )
 
     return jsonify({"job_id": job_id, "status": "queued"}), 202

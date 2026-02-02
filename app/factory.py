@@ -122,9 +122,13 @@ def create_app():
 
     @app.route("/agent", methods=["POST"])
     def agent_query():
-        query = request.json.get("query")
-        answer = run_agent(query)
-        return jsonify({"answer": answer})
+        data = request.get_json(silent=True) or {}
+        query = data.get("query")
+        debug = bool(data.get("debug", False))
+        if not query:
+            return jsonify({"error": "Missing 'query' field"}), 400
+        result = run_agent(query, debug=debug)
+        return jsonify(result)
 
     admin = Admin(app, name="Control Panel")
     admin.add_view(ModelView(User, db.session))

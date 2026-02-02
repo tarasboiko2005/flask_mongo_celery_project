@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user
 
-from app.mcp.agent import run_agent
+from app.mcp.agent import AGENT_MESSAGE, run_agent
 from app.tasks.image_tasks import process_image
 from app.tasks.parser_tasks import parse_page
 
@@ -36,6 +36,11 @@ def post_agent():
         type: file
         required: false
         description: Image file to convert
+      - name: user_email
+        in: formData
+        type: string
+        required: false
+        description: Email to send the job report to (used when not logged in)
     responses:
       200:
         description: Agent response
@@ -49,6 +54,11 @@ def post_agent():
         file = request.files["file"]
         if not file:
             return jsonify({"error": "file_required"}), 400
+
+        # If not authenticated (e.g. Swagger testing), allow passing email as a form field.
+        user_email = getattr(current_user, "email", None) or request.form.get(
+            "user_email"
+        )
 
         filename = file.filename
         output_dir = os.getenv("FILE_OUTPUT_DIR", "./output")
@@ -65,7 +75,7 @@ def post_agent():
                 "updated_at": datetime.utcnow(),
                 "filename": filename,
                 "file_path": filepath,
-                "user_email": getattr(current_user, "email", None),
+                "user_email": user_email,
             }
         )
 
@@ -73,11 +83,12 @@ def post_agent():
             job_id=job_id,
             filename=filename,
             filepath=filepath,
-            user_email=getattr(current_user, "email", None),
+            user_email=user_email,
         )
 
         return jsonify(
             {
+                "agent_message": AGENT_MESSAGE,
                 "input": filename,
                 "result": {
                     "message": "Image conversion queued",
@@ -90,6 +101,7 @@ def post_agent():
 
     data = request.get_json(silent=True) or {}
     query = data.get("query")
+    debug = bool(data.get("debug", False))
 
     if not query:
         return jsonify({"error": "Missing 'query' field or file"}), 400
@@ -119,6 +131,7 @@ def post_agent():
 
             return jsonify(
                 {
+                    "agent_message": AGENT_MESSAGE,
                     "input": query,
                     "result": {
                         "message": "Parsing queued",
@@ -128,8 +141,8 @@ def post_agent():
                 }
             ), 200
 
-        result = run_agent(query)
-        return jsonify({"input": query, "result": result}), 200
+        result = run_agent(query, debug=debug)
+        return jsonify({"input": query, **result}), 200
 
     except Exception as e:
         import traceback

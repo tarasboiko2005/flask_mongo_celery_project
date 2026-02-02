@@ -37,13 +37,20 @@ def create_job_record(job_id: str, job_type: str, extra: dict = None):
         logger.error(f"[{job_id}] Failed to create job record: {e}")
 
 
-def convert_tool(filename: str, filepath: str) -> dict:
+def convert_tool(filename: str, filepath: str, user_email: str | None = None) -> dict:
     try:
         job_id = f"convert-{uuid.uuid4().hex}"
         create_job_record(
-            job_id, "convert", {"filename": filename, "filepath": filepath}
+            job_id,
+            "convert",
+            {"filename": filename, "filepath": filepath, "user_email": user_email},
         )
-        process_image.delay(job_id=job_id, filename=filename, filepath=filepath)
+        process_image.delay(
+            job_id=job_id,
+            filename=filename,
+            filepath=filepath,
+            user_email=user_email,
+        )
 
         return {
             "job_id": job_id,
