@@ -1,13 +1,16 @@
 import logging
-import uuid
 import os
+import uuid
 from datetime import datetime
+
 from pymongo import MongoClient
+
 from app.tasks.image_tasks import process_image
 from app.tasks.parser_tasks import parse_page
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def create_job_record(job_id: str, job_type: str, extra: dict = None):
     try:
@@ -23,7 +26,7 @@ def create_job_record(job_id: str, job_type: str, extra: dict = None):
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "parsed_data": [],
-            "processed_files": []
+            "processed_files": [],
         }
         if extra:
             base_record.update(extra)
@@ -33,10 +36,13 @@ def create_job_record(job_id: str, job_type: str, extra: dict = None):
     except Exception as e:
         logger.error(f"[{job_id}] Failed to create job record: {e}")
 
+
 def convert_tool(filename: str, filepath: str) -> dict:
     try:
         job_id = f"convert-{uuid.uuid4().hex}"
-        create_job_record(job_id, "convert", {"filename": filename, "filepath": filepath})
+        create_job_record(
+            job_id, "convert", {"filename": filename, "filepath": filepath}
+        )
         process_image.delay(job_id=job_id, filename=filename, filepath=filepath)
 
         return {
@@ -45,7 +51,7 @@ def convert_tool(filename: str, filepath: str) -> dict:
             "filepath": filepath,
             "status": "queued",
             "message": f"Conversion task for {filename} has been queued.",
-            "output_file": None
+            "output_file": None,
         }
 
     except Exception as e:
@@ -56,8 +62,9 @@ def convert_tool(filename: str, filepath: str) -> dict:
             "filepath": filepath,
             "status": "failed",
             "message": f"Failed to queue conversion task: {str(e)}",
-            "output_file": None
+            "output_file": None,
         }
+
 
 def parse_tool(url: str, limit: int = 5) -> dict:
     try:
@@ -70,7 +77,7 @@ def parse_tool(url: str, limit: int = 5) -> dict:
             "status": "queued",
             "message": f"Parsing task for {url} has been queued.",
             "images": [],
-            "file": None
+            "file": None,
         }
 
     except Exception as e:
@@ -80,5 +87,5 @@ def parse_tool(url: str, limit: int = 5) -> dict:
             "status": "failed",
             "message": f"Failed to queue parsing task: {str(e)}",
             "images": [],
-            "file": None
+            "file": None,
         }

@@ -1,5 +1,6 @@
-from app.utils.email import send_email
 from app.extensions import celery
+from app.utils.email import send_email
+
 
 @celery.task
 def send_job_report(user_email, job_id, status=None, details=None):
@@ -12,8 +13,8 @@ Hello,
 
 Your job has finished.
 ID: {job_id}
-Status: {status or 'N/A'}
-Details: {details or 'N/A'}
+Status: {status or "N/A"}
+Details: {details or "N/A"}
 
 Thank you for using our service!
 """

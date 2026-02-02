@@ -1,11 +1,15 @@
-from flask import Blueprint, request, jsonify, current_app
-import os, uuid
+import os
+import uuid
 from datetime import datetime
-from app.schemas import ImageUploadRequest
+
+from flask import Blueprint, current_app, jsonify, request
 from pydantic import ValidationError
+
+from app.schemas import ImageUploadRequest
 from app.tasks.image_tasks import process_image
 
 bp = Blueprint("image_jobs", __name__)
+
 
 @bp.route("/jobs/image", methods=["POST"])
 def upload_image():

@@ -1,6 +1,8 @@
-from flask_mail import Message
-from app.extensions import mail
 from flask import current_app
+from flask_mail import Message
+
+from app.extensions import mail
+
 
 def send_email(subject, recipients, body):
     recipients = [r for r in recipients if r]
@@ -16,7 +18,7 @@ def send_email(subject, recipients, body):
         subject=subject,
         sender=current_app.config.get("MAIL_DEFAULT_SENDER"),
         recipients=recipients,
-        body=body
+        body=body,
     )
     try:
         mail.send(msg)

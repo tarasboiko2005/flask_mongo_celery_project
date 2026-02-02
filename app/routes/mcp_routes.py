@@ -1,9 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
+
 from app.mcp.tools import convert_tool, parse_tool
 from app.rag.vector_store import get_vectorstore
-from app.repositories.job_repository import create_job, get_job, update_job, delete_job
+from app.repositories.job_repository import create_job, delete_job, get_job, update_job
 
 mcp_bp = Blueprint("mcp", __name__)
+
 
 @mcp_bp.route("/convert_image", methods=["POST"])
 def convert_image():
@@ -30,6 +32,7 @@ def convert_image():
     filename = data.get("filename")
     filepath = data.get("filepath")
     return jsonify({"output": convert_tool(filename, filepath)})
+
 
 @mcp_bp.route("/parse_page", methods=["POST"])
 def parse_page():
@@ -60,6 +63,7 @@ def parse_page():
     limit = data.get("limit", 5)
     return jsonify(parse_tool(job_id, url, limit))
 
+
 @mcp_bp.route("/search_vectors", methods=["POST"])
 def search_vectors():
     """
@@ -88,6 +92,7 @@ def search_vectors():
     results = vs.similarity_search(query, k=top_k)
     return jsonify({"output": [r.page_content for r in results]})
 
+
 @mcp_bp.route("/create_job", methods=["POST"])
 def create_job_tool():
     """
@@ -112,8 +117,19 @@ def create_job_tool():
         description: Job created
     """
     data = request.get_json(force=True)
-    job = create_job(data["job_id"], data.get("status", "pending"), data.get("progress", 0))
-    return jsonify({"output": {"job_id": job.job_id, "status": job.status, "progress": job.progress}})
+    job = create_job(
+        data["job_id"], data.get("status", "pending"), data.get("progress", 0)
+    )
+    return jsonify(
+        {
+            "output": {
+                "job_id": job.job_id,
+                "status": job.status,
+                "progress": job.progress,
+            }
+        }
+    )
+
 
 @mcp_bp.route("/get_job", methods=["POST"])
 def get_job_tool():
@@ -137,8 +153,17 @@ def get_job_tool():
     data = request.get_json(force=True)
     job = get_job(data["job_id"])
     if job:
-        return jsonify({"output": {"job_id": job.job_id, "status": job.status, "progress": job.progress}})
+        return jsonify(
+            {
+                "output": {
+                    "job_id": job.job_id,
+                    "status": job.status,
+                    "progress": job.progress,
+                }
+            }
+        )
     return jsonify({"output": None})
+
 
 @mcp_bp.route("/update_job", methods=["POST"])
 def update_job_tool():
@@ -166,8 +191,17 @@ def update_job_tool():
     data = request.get_json(force=True)
     job = update_job(data["job_id"], **{k: v for k, v in data.items() if k != "job_id"})
     if job:
-        return jsonify({"output": {"job_id": job.job_id, "status": job.status, "progress": job.progress}})
+        return jsonify(
+            {
+                "output": {
+                    "job_id": job.job_id,
+                    "status": job.status,
+                    "progress": job.progress,
+                }
+            }
+        )
     return jsonify({"output": None})
+
 
 @mcp_bp.route("/delete_job", methods=["POST"])
 def delete_job_tool():

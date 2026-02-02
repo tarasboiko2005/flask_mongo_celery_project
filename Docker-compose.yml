@@ -9,6 +9,12 @@ services:
     depends_on:
       - mongo
       - redis
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     volumes:
       - .:/app
 
@@ -18,9 +24,12 @@ services:
     command: celery -A app.celery_app.celery_app worker --loglevel=INFO
     env_file: .env
     depends_on:
-      - web
-      - mongo
-      - redis
+      web:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - .:/app
 
@@ -30,9 +39,12 @@ services:
     command: celery -A app.celery_app.celery_app beat --loglevel=INFO
     env_file: .env
     depends_on:
-      - web
-      - mongo
-      - redis
+      web:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - .:/app
 
@@ -42,10 +54,14 @@ services:
     command: python -m app.mcp.server
     env_file: .env
     depends_on:
-      - web
-      - worker
-      - redis
-      - mongo
+      web:
+        condition: service_healthy
+      worker:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
     ports:
       - "9000:9000"
     volumes:
@@ -56,6 +72,11 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   mongo:
     image: mongo:6
@@ -64,6 +85,11 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"const r=db.runCommand({ ping: 1 }); if (!r.ok) { quit(2) }\""]
+      interval: 10s
+      timeout: 5s
+      retries: 20
 
 volumes:
   mongo_data:

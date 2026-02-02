@@ -1,36 +1,38 @@
 import os
-from flasgger import Swagger
-from flask import Flask, request, jsonify
-from flask_login import current_user
-from pymongo import MongoClient
-from flask_cors import CORS
+
 from dotenv import load_dotenv
+from flasgger import Swagger
+from flask import Flask, jsonify, request
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
+from flask_cors import CORS
+from flask_login import current_user
+from pymongo import MongoClient
 
 from app.extensions import (
+    celery,
     db,
     login_manager,
-    oauth,
-    migrate,
     mail,
     make_celery,
-    celery,
+    migrate,
+    oauth,
 )
-from app.models import User, Job
-from app.settings import Settings
-from app.routes.health import health_bp
-from app.rag.rag_pipeline import query_history
 from app.mcp.agent import run_agent
+from app.models import Job, User
+from app.rag.rag_pipeline import query_history
 from app.routes.agent import agent_bp
+from app.routes.email import email_bp
+from app.routes.health import health_bp
 from app.schemas import (
+    ImageUploadRequest,
     JobStatusResponse,
     ParseJobRequest,
-    ImageUploadRequest,
     ProcessedFile,
     SendJobReportRequest,
 )
-from app.routes.email import email_bp
+from app.settings import Settings
+
 
 def create_app():
     load_dotenv()
@@ -69,18 +71,30 @@ def create_app():
     app.register_blueprint(agent_bp, url_prefix="/api")
 
     from .routes import blueprints
+
     for bp in blueprints:
         app.register_blueprint(bp, url_prefix="/api")
 
     from .routes.auth import auth_bp
+
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
     definitions = {
-        "JobStatus": JobStatusResponse.model_json_schema(ref_template="#/definitions/{model}"),
-        "ParseJobRequest": ParseJobRequest.model_json_schema(ref_template="#/definitions/{model}"),
-        "ImageUploadRequest": ImageUploadRequest.model_json_schema(ref_template="#/definitions/{model}"),
-        "ProcessedFile": ProcessedFile.model_json_schema(ref_template="#/definitions/{model}"),
-        "SendJobReportRequest": SendJobReportRequest.model_json_schema(ref_template="#/definitions/{model}"),
+        "JobStatus": JobStatusResponse.model_json_schema(
+            ref_template="#/definitions/{model}"
+        ),
+        "ParseJobRequest": ParseJobRequest.model_json_schema(
+            ref_template="#/definitions/{model}"
+        ),
+        "ImageUploadRequest": ImageUploadRequest.model_json_schema(
+            ref_template="#/definitions/{model}"
+        ),
+        "ProcessedFile": ProcessedFile.model_json_schema(
+            ref_template="#/definitions/{model}"
+        ),
+        "SendJobReportRequest": SendJobReportRequest.model_json_schema(
+            ref_template="#/definitions/{model}"
+        ),
     }
     Swagger(
         app,

@@ -1,6 +1,9 @@
-from app.extensions import db
 from datetime import datetime
+
 from flask_login import UserMixin
+
+from app.extensions import db
+
 
 class Job(db.Model):
     __tablename__ = "jobs"
@@ -9,13 +12,16 @@ class Job(db.Model):
     status = db.Column(db.String(32), nullable=False, default="pending")
     progress = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
     filename = db.Column(db.String(255))
     file_path = db.Column(db.String(255))
     user_id = db.Column(db.String(64), db.ForeignKey("users.id"), nullable=True)
 
     def __repr__(self):
         return f"<Job {self.job_id} status={self.status} progress={self.progress}>"
+
 
 class User(db.Model, UserMixin):
     __tablename__ = "users"

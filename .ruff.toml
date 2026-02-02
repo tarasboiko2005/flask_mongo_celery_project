@@ -1,0 +1,14 @@
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = [
+  "E501", # line length handled by formatter / not critical
+]
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["F401"] # allow re-export/import-for-registration patterns
+

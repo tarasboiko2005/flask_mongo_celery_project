@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify
-from flask_login import login_required, current_user
+from flask_login import current_user, login_required
+
 from app.tasks.email_tasks import send_job_report
 
 email_bp = Blueprint("email", __name__)
+
 
 @email_bp.route("/send_job_report", methods=["POST"])
 @login_required

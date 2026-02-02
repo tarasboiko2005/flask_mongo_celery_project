@@ -1,12 +1,16 @@
-from flask import Blueprint, request, jsonify, current_app
-import os, uuid
+import os
+import uuid
 from datetime import datetime
+
+from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user
+
 from app.mcp.agent import run_agent
-from app.tasks.parser_tasks import parse_page
 from app.tasks.image_tasks import process_image
+from app.tasks.parser_tasks import parse_page
 
 agent_bp = Blueprint("agent", __name__)
+
 
 @agent_bp.route("/agent", methods=["POST"])
 def post_agent():
@@ -52,33 +56,37 @@ def post_agent():
         filepath = os.path.join(output_dir, filename)
         file.save(filepath)
         job_id = f"agent-image-{uuid.uuid4().hex}"
-        current_app.jobs.insert_one({
-            "job_id": job_id,
-            "status": "queued",
-            "progress": 0,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "filename": filename,
-            "file_path": filepath,
-            "user_email": getattr(current_user, "email", None)
-        })
+        current_app.jobs.insert_one(
+            {
+                "job_id": job_id,
+                "status": "queued",
+                "progress": 0,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+                "filename": filename,
+                "file_path": filepath,
+                "user_email": getattr(current_user, "email", None),
+            }
+        )
 
         process_image.delay(
             job_id=job_id,
             filename=filename,
             filepath=filepath,
-            user_email=getattr(current_user, "email", None)
+            user_email=getattr(current_user, "email", None),
         )
 
-        return jsonify({
-            "input": filename,
-            "result": {
-                "message": "Image conversion queued",
-                "job_id": job_id,
-                "status": "queued",
-                "file": filepath
+        return jsonify(
+            {
+                "input": filename,
+                "result": {
+                    "message": "Image conversion queued",
+                    "job_id": job_id,
+                    "status": "queued",
+                    "file": filepath,
+                },
             }
-        }), 200
+        ), 200
 
     data = request.get_json(silent=True) or {}
     query = data.get("query")
@@ -90,39 +98,41 @@ def post_agent():
         if query.startswith("http://") or query.startswith("https://"):
             job_id = f"agent-parse-{uuid.uuid4().hex}"
 
-            current_app.jobs.insert_one({
-                "job_id": job_id,
-                "status": "queued",
-                "progress": 0,
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow(),
-                "url": query,
-                "user_email": getattr(current_user, "email", None)
-            })
+            current_app.jobs.insert_one(
+                {
+                    "job_id": job_id,
+                    "status": "queued",
+                    "progress": 0,
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow(),
+                    "url": query,
+                    "user_email": getattr(current_user, "email", None),
+                }
+            )
 
             parse_page.delay(
                 job_id=job_id,
                 url=query,
                 user_email=getattr(current_user, "email", None),
-                limit=5
+                limit=5,
             )
 
-            return jsonify({
-                "input": query,
-                "result": {
-                    "message": "Parsing queued",
-                    "job_id": job_id,
-                    "status": "queued"
+            return jsonify(
+                {
+                    "input": query,
+                    "result": {
+                        "message": "Parsing queued",
+                        "job_id": job_id,
+                        "status": "queued",
+                    },
                 }
-            }), 200
+            ), 200
 
         result = run_agent(query)
-        return jsonify({
-            "input": query,
-            "result": result
-        }), 200
+        return jsonify({"input": query, "result": result}), 200
 
     except Exception as e:
         import traceback
+
         current_app.logger.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500

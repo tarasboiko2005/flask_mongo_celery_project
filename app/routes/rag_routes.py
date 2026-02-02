@@ -1,9 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from app.rag.vector_store import get_vectorstore
 
 rag_bp = Blueprint("rag", __name__)
+
 
 @rag_bp.route("/add_document", methods=["POST"])
 def add_document():
@@ -39,7 +41,6 @@ def add_document():
     vectorstore = get_vectorstore()
     vectorstore.add_documents(chunks)
 
-    return jsonify({
-        "message": f"Added {len(chunks)} chunks to vectorstore",
-        "metadata": metadata
-    }), 200
+    return jsonify(
+        {"message": f"Added {len(chunks)} chunks to vectorstore", "metadata": metadata}
+    ), 200

@@ -7,6 +7,25 @@ output/
 instance/
 *.db
 celerybeat-schedule
+celerybeat-schedule.*
+celerybeat.pid
 seed.py
 debug.log
 wheels
+
+# Logs
+*.log
+
+# Test / tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Session files (Flask-Session)
+flask_session/
+
+# Editor config
+.vscode/

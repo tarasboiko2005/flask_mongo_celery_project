@@ -1,9 +1,9 @@
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
 from authlib.integrations.flask_client import OAuth
-from flask_migrate import Migrate
-from flask_mail import Mail
 from celery import Celery
+from flask_login import LoginManager
+from flask_mail import Mail
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -18,7 +18,9 @@ def make_celery(app):
     celery.conf.update(extra_config)
 
     broker_url = app.config.get("CELERY_BROKER_URL") or celery.conf.get("broker_url")
-    result_backend = app.config.get("CELERY_RESULT_BACKEND") or celery.conf.get("result_backend")
+    result_backend = app.config.get("CELERY_RESULT_BACKEND") or celery.conf.get(
+        "result_backend"
+    )
     celery.conf.update(
         broker_url=broker_url,
         result_backend=result_backend,
@@ -34,6 +36,7 @@ def make_celery(app):
 
     celery.Task = ContextTask
     return celery
+
 
 def init_extensions(app):
     db.init_app(app)

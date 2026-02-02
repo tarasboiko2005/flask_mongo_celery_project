@@ -1,7 +1,9 @@
-import os
 import logging
+import os
 from logging.handlers import RotatingFileHandler
+
 from celery.schedules import crontab
+
 
 class Settings:
     # Flask
@@ -48,7 +50,7 @@ class Settings:
         "swagger_ui": True,
         "specs_route": "/api/docs/",
         "title": "Image & Parsing Job API",
-        "uiversion": 3
+        "uiversion": 3,
     }
 
     SWAGGER_TEMPLATE = {
@@ -56,14 +58,16 @@ class Settings:
         "info": {"title": "Image & Parsing Job API", "version": "1.0.0"},
         "basePath": "/api",
         "schemes": ["http"],
-        "tags": [{"name": "Jobs", "description": "Job endpoints"}]
+        "tags": [{"name": "Jobs", "description": "Job endpoints"}],
     }
 
     @staticmethod
     def setup_logging(app):
         handler = RotatingFileHandler("debug.log", maxBytes=1000000, backupCount=3)
         handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        )
         handler.setFormatter(formatter)
         app.logger.addHandler(handler)
 
@@ -76,7 +80,9 @@ class Settings:
     DAILY_JOB_ID = os.getenv("DAILY_JOB_ID", "job_daily")
     PARSER_URL = os.getenv("PARSER_URL", "https://www.python.org")
     PARSER_LIMIT = int(os.getenv("PARSER_LIMIT", "5"))
-    DAILY_JOB_USER_EMAIL = os.getenv("DAILY_JOB_USER_EMAIL", os.getenv("MAIL_DEFAULT_SENDER", "test@example.com"))
+    DAILY_JOB_USER_EMAIL = os.getenv(
+        "DAILY_JOB_USER_EMAIL", os.getenv("MAIL_DEFAULT_SENDER", "test@example.com")
+    )
 
     CELERY_CONFIG = {
         "task_serializer": "json",
@@ -95,7 +101,9 @@ class Settings:
     def setup_celery_logging():
         handler = RotatingFileHandler("debug.log", maxBytes=1000000, backupCount=3)
         handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        )
         handler.setFormatter(formatter)
 
         logger = logging.getLogger("celery")
@@ -103,5 +111,6 @@ class Settings:
         logger.addHandler(handler)
 
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
-
+    CELERY_RESULT_BACKEND = os.getenv(
+        "CELERY_RESULT_BACKEND", "redis://localhost:6379/0"
+    )
