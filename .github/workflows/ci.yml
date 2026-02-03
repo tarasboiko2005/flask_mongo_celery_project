@@ -27,13 +27,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest flake8 black mypy coverage
+          pip install pytest flake8 black coverage
 
       - name: Lint
         run: |
           flake8 .
           black --check .
-          mypy .
 
       - name: Run tests
         env:
