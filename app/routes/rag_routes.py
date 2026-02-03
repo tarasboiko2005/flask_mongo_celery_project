@@ -41,6 +41,12 @@ def add_document():
     vectorstore = get_vectorstore()
     vectorstore.add_documents(chunks)
 
-    return jsonify(
-        {"message": f"Added {len(chunks)} chunks to vectorstore", "metadata": metadata}
-    ), 200
+    return (
+        jsonify(
+            {
+                "message": f"Added {len(chunks)} chunks to vectorstore",
+                "metadata": metadata,
+            }
+        ),
+        200,
+    )

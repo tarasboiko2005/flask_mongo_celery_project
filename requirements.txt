@@ -23,11 +23,11 @@ langchain_core
 langchain_google_genai
 faiss-cpu
 gunicorn
-numpy==1.26.4
-packaging
+numpy>=1.26,<2.0
 PyJWT
 black==23.9.1
 flake8==6.1.0
 mypy==1.6.1
 pytest==7.4.0
 coverage==7.3.2
+packaging<26.0.0,>=23.2.0
