@@ -29,6 +29,7 @@ mypy==1.6.1
 flake8==6.1.0
 coverage==7.3.2
 packaging<26.0.0,>=23.2.0
+pytest-cov
 types-requests
 types-beautifulsoup4
 types-Flask-Cors
