@@ -55,7 +55,6 @@ def post_agent():
         if not file:
             return jsonify({"error": "file_required"}), 400
 
-        # If not authenticated (e.g. Swagger testing), allow passing email as a form field.
         user_email = getattr(current_user, "email", None) or request.form.get(
             "user_email"
         )
