@@ -1,11 +1,15 @@
-from flask import Blueprint, request, jsonify, current_app
-import os, uuid
+import os
+import uuid
 from datetime import datetime
-from app.schemas import ImageUploadRequest
+
+from flask import Blueprint, current_app, jsonify, request
 from pydantic import ValidationError
+
+from app.schemas import ImageUploadRequest
 from app.tasks.image_tasks import process_image
 
 bp = Blueprint("image_jobs", __name__)
+
 
 @bp.route("/jobs/image", methods=["POST"])
 def upload_image():
@@ -21,6 +25,11 @@ def upload_image():
         in: formData
         type: file
         required: true
+      - name: user_email
+        in: formData
+        type: string
+        required: false
+        description: Email to send the job report to
     responses:
       202:
         description: Image job created
@@ -49,7 +58,12 @@ def upload_image():
         "created_at": datetime.utcnow().isoformat(),
         "updated_at": datetime.utcnow().isoformat(),
     }
+    user_email = request.form.get("user_email")
+    if user_email:
+        doc["user_email"] = user_email
     current_app.jobs.insert_one(doc)
-    process_image.delay(job_id, data.filename, filepath)
+    process_image.delay(
+        job_id=job_id, filename=data.filename, filepath=filepath, user_email=user_email
+    )
 
     return jsonify({"job_id": job_id, "status": "queued"}), 202

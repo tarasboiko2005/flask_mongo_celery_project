@@ -1,13 +1,30 @@
-from flask import Blueprint, redirect, url_for, session
-from flask_login import login_user, logout_user, current_user
-from app.factory import oauth, db, login_manager
+import datetime
+
+import jwt
+from flask import Blueprint, current_app, jsonify, redirect, request, session, url_for
+from flask_login import current_user, login_user, logout_user
+
+from app.extensions import db, login_manager, oauth
 from app.models import User
 
 auth_bp = Blueprint("auth", __name__)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
+
+
+def create_jwt(user):
+    payload = {
+        "sub": user.id,
+        "email": user.email,
+        "name": user.name,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+    }
+    token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
+    return token
+
 
 @auth_bp.route("/login")
 def login():
@@ -16,10 +33,13 @@ def login():
     redirect_uri = url_for("auth.authorize", _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
+
 @auth_bp.route("/authorize")
 def authorize():
-    token = oauth.google.authorize_access_token()
-    user_info = oauth.google.get("https://openidconnect.googleapis.com/v1/userinfo").json()
+    oauth.google.authorize_access_token()
+    user_info = oauth.google.get(
+        "https://openidconnect.googleapis.com/v1/userinfo"
+    ).json()
 
     user_id = user_info.get("sub")
     if not user_id:
@@ -35,10 +55,28 @@ def authorize():
         db.session.commit()
 
     login_user(user)
-    return redirect("/")
+    jwt_token = create_jwt(user)
+    return jsonify({"jwt": jwt_token})
+
 
 @auth_bp.route("/logout")
 def logout():
     logout_user()
     session.clear()
     return redirect("/")
+
+
+def verify_jwt():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(
+            token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None

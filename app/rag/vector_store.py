@@ -1,15 +1,18 @@
-import faiss
 import logging
 from threading import Lock
-from langchain_community.vectorstores import FAISS
+
+import faiss
+from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.docstore.in_memory import InMemoryDocstore
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+
 from .embeddings import get_embeddings
 
 logger = logging.getLogger(__name__)
 
 _vectorstore = None
 _lock = Lock()
+
 
 def _create_vectorstore() -> FAISS:
     embeddings = get_embeddings()
@@ -25,8 +28,9 @@ def _create_vectorstore() -> FAISS:
         embedding_function=embeddings,
         index=index,
         docstore=docstore,
-        index_to_docstore_id={}
+        index_to_docstore_id={},
     )
+
 
 def get_vectorstore() -> FAISS:
     global _vectorstore
@@ -38,25 +42,25 @@ def get_vectorstore() -> FAISS:
 
     return _vectorstore
 
+
 def add_metadata(vectorstore: FAISS, text: str, metadata: dict | None = None):
     if not metadata:
         metadata = {}
 
     logger.info("Adding metadata to vectorstore")
+    vectorstore.add_texts(texts=[text], metadatas=[metadata])
 
-    vectorstore.add_texts(
-        texts=[text],
-        metadatas=[metadata]
-    )
 
-def add_documents(vectorstore: FAISS, docs: list, chunk_size: int = 1000, chunk_overlap: int = 200):
+def add_documents(
+    vectorstore: FAISS, docs: list, chunk_size: int = 1000, chunk_overlap: int = 200
+):
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
     chunks = splitter.split_documents(docs)
     logger.info(f"Adding {len(chunks)} chunks to vectorstore")
     vectorstore.add_documents(chunks)
+
 
 def search(vectorstore: FAISS, query: str, k: int = 5):
     logger.info(f"Searching vectorstore for query: {query}")

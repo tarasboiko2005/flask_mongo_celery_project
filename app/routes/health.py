@@ -1,11 +1,13 @@
-from flask import Blueprint, jsonify
-from app.db import db
 import redis
+from flask import Blueprint, jsonify
 from pymongo import MongoClient
-from app.settings import Settings
 from sqlalchemy import text
 
+from app.extensions import db
+from app.settings import Settings
+
 health_bp = Blueprint("health", __name__)
+
 
 @health_bp.route("/health", methods=["GET"])
 def health_check():

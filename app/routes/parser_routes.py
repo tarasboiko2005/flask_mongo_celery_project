@@ -1,11 +1,14 @@
-from flask import Blueprint, request, jsonify, current_app
 import uuid
 from datetime import datetime
+
+from flask import Blueprint, current_app, jsonify, request
 from pydantic import ValidationError
+
 from app.schemas import ParseJobRequest
 from app.tasks.parser_tasks import parse_page
 
 bp = Blueprint("parse_jobs", __name__)
+
 
 @bp.route("/jobs/parse", methods=["POST"])
 def parse_job():
@@ -33,8 +36,7 @@ def parse_job():
     """
     try:
         data = ParseJobRequest(
-            url=request.form.get("url"),
-            limit=request.form.get("limit")
+            url=request.form.get("url"), limit=request.form.get("limit")
         )
     except ValidationError as e:
         return jsonify({"error": e.errors()}), 400
@@ -47,8 +49,8 @@ def parse_job():
         "created_at": datetime.utcnow().isoformat(),
         "updated_at": datetime.utcnow().isoformat(),
         "url": str(data.url),
-        "limit": data.limit
+        "limit": data.limit,
     }
     current_app.jobs.insert_one(doc)
-    parse_page.delay(job_id, str(data.url), data.limit)
+    parse_page.delay(job_id=job_id, url=str(data.url), limit=data.limit)
     return jsonify({"job_id": job_id, "status": "queued"}), 202

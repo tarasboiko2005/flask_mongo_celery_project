@@ -1,9 +1,12 @@
-from flask import Blueprint, jsonify, current_app, request, send_file
-from pydantic import ValidationError
-from app.schemas import JobStatusResponse, ProcessedFile
 from email.utils import parsedate_to_datetime
 
+from flask import Blueprint, current_app, jsonify, request, send_file
+from pydantic import ValidationError
+
+from app.schemas import JobStatusResponse, ProcessedFile
+
 bp = Blueprint("status_jobs", __name__)
+
 
 def normalize_datetime_fields(job):
     for field in ["created_at", "updated_at"]:
@@ -13,6 +16,7 @@ def normalize_datetime_fields(job):
                 job[field] = parsed.isoformat()
             except Exception:
                 pass
+
 
 @bp.route("/jobs/<job_id>", methods=["GET"])
 def job_status(job_id):
@@ -43,7 +47,9 @@ def job_status(job_id):
     normalize_datetime_fields(job)
 
     if "processed_files" in job and job["processed_files"]:
-        job["processed_files"] = [ProcessedFile(**f).dict() for f in job["processed_files"]]
+        job["processed_files"] = [
+            ProcessedFile(**f).dict() for f in job["processed_files"]
+        ]
 
     try:
         data = JobStatusResponse(**job)
@@ -51,6 +57,7 @@ def job_status(job_id):
         return jsonify({"error": e.errors(), "raw": job}), 400
 
     return jsonify(data.model_dump(mode="json"))
+
 
 @bp.route("/jobs/<job_id>/download", methods=["GET"])
 def job_download(job_id):
@@ -89,9 +96,15 @@ def job_download(job_id):
         if index >= len(files):
             return jsonify({"error": "invalid_index"}), 409
         file_info = files[index]
-        return send_file(file_info["file_path"], as_attachment=True, download_name=file_info["filename"])
+        return send_file(
+            file_info["file_path"],
+            as_attachment=True,
+            download_name=file_info["filename"],
+        )
 
     if "file_path" in job and "filename" in job:
-        return send_file(job["file_path"], as_attachment=True, download_name=job["filename"])
+        return send_file(
+            job["file_path"], as_attachment=True, download_name=job["filename"]
+        )
 
     return jsonify({"error": "no_file"}), 409
