@@ -25,7 +25,9 @@ class Settings:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # BASE_URL for OAuth redirect
-    BASE_URL = os.getenv("BASE_URL", "https://flaskmongoceleryproject-production-2064.up.railway.app")
+    BASE_URL = os.getenv(
+        "BASE_URL", "https://flaskmongoceleryproject-production-2064.up.railway.app"
+    )
 
     # Google OAuth
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
