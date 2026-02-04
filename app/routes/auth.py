@@ -37,7 +37,7 @@ def login():
 
 @auth_bp.route("/authorize")
 def authorize():
-    token = oauth.google.authorize_access_token()
+    oauth.google.authorize_access_token()
     user_info = oauth.google.get(
         "https://openidconnect.googleapis.com/v1/userinfo"
     ).json()
