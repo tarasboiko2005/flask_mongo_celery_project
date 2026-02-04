@@ -24,6 +24,9 @@ class Settings:
     SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # BASE_URL for OAuth redirect
+    BASE_URL = os.getenv("BASE_URL", "https://flaskmongoceleryproject-production-2064.up.railway.app")
+
     # Google OAuth
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -33,7 +36,7 @@ class Settings:
         "client_secret": GOOGLE_CLIENT_SECRET,
         "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration",
         "client_kwargs": {"scope": "openid email profile"},
-        "redirect_uri": "https://flaskmongoceleryproject-production-2064.up.railway.app/auth/callback",
+        "redirect_uri": f"{BASE_URL}/auth/authorize",
     }
 
     # Swagger
