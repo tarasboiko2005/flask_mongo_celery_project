@@ -33,7 +33,7 @@ class Settings:
         "client_secret": GOOGLE_CLIENT_SECRET,
         "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration",
         "client_kwargs": {"scope": "openid email profile"},
-        "redirect_uri": "https://flaskmongoceleryproject-production-2064.up.railway.app/auth/callback"
+        "redirect_uri": "https://flaskmongoceleryproject-production-2064.up.railway.app/auth/callback",
     }
 
     # Swagger
