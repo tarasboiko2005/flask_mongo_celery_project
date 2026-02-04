@@ -135,7 +135,7 @@ def create_app():
     admin.add_view(ModelView(Job, db.session))
 
     with app.app_context():
-        db.create_all()
+        db.create_all(checkfirst=True)
 
     Settings.setup_logging(app)
 
