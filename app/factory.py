@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 from flasgger import Swagger
 from flask import Flask, jsonify, request
@@ -41,7 +40,7 @@ def create_app():
     app.config.from_object(Settings)
     app.config.update(
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret"),
-        SQLALCHEMY_DATABASE_URI=os.getenv("SQLALCHEMY_DATABASE_URI"),
+        SQLALCHEMY_DATABASE_URI=os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db"),
         MONGO_URI=os.getenv("MONGO_URI"),
         CELERY_BROKER_URL=os.getenv("CELERY_BROKER_URL"),
         CELERY_RESULT_BACKEND=os.getenv("CELERY_RESULT_BACKEND"),
@@ -71,30 +70,18 @@ def create_app():
     app.register_blueprint(agent_bp, url_prefix="/api")
 
     from .routes import blueprints
-
     for bp in blueprints:
         app.register_blueprint(bp, url_prefix="/api")
 
     from .routes.auth import auth_bp
-
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
     definitions = {
-        "JobStatus": JobStatusResponse.model_json_schema(
-            ref_template="#/definitions/{model}"
-        ),
-        "ParseJobRequest": ParseJobRequest.model_json_schema(
-            ref_template="#/definitions/{model}"
-        ),
-        "ImageUploadRequest": ImageUploadRequest.model_json_schema(
-            ref_template="#/definitions/{model}"
-        ),
-        "ProcessedFile": ProcessedFile.model_json_schema(
-            ref_template="#/definitions/{model}"
-        ),
-        "SendJobReportRequest": SendJobReportRequest.model_json_schema(
-            ref_template="#/definitions/{model}"
-        ),
+        "JobStatus": JobStatusResponse.model_json_schema(ref_template="#/definitions/{model}"),
+        "ParseJobRequest": ParseJobRequest.model_json_schema(ref_template="#/definitions/{model}"),
+        "ImageUploadRequest": ImageUploadRequest.model_json_schema(ref_template="#/definitions/{model}"),
+        "ProcessedFile": ProcessedFile.model_json_schema(ref_template="#/definitions/{model}"),
+        "SendJobReportRequest": SendJobReportRequest.model_json_schema(ref_template="#/definitions/{model}"),
     }
     Swagger(
         app,
@@ -134,8 +121,9 @@ def create_app():
     admin.add_view(ModelView(User, db.session))
     admin.add_view(ModelView(Job, db.session))
 
-    with app.app_context():
-        db.metadata.create_all(bind=db.engine)
+    if app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("sqlite"):
+        with app.app_context():
+            db.metadata.create_all(bind=db.engine, checkfirst=True)
 
     Settings.setup_logging(app)
 
