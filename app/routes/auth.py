@@ -1,7 +1,6 @@
 import datetime
-
 import jwt
-from flask import Blueprint, current_app, jsonify, redirect, request, session, url_for
+from flask import Blueprint, current_app, jsonify, redirect, request, session
 from flask_login import current_user, login_user, logout_user
 
 from app.extensions import db, login_manager, oauth
@@ -30,13 +29,15 @@ def create_jwt(user):
 def login():
     if current_user.is_authenticated:
         return redirect("/")
-    redirect_uri = url_for("auth.authorize", _external=True)
+
+    base_url = current_app.config.get("BASE_URL", "http://127.0.0.1:5000")
+    redirect_uri = f"{base_url}/auth/authorize"
     return oauth.google.authorize_redirect(redirect_uri)
 
 
 @auth_bp.route("/authorize")
 def authorize():
-    oauth.google.authorize_access_token()
+    token = oauth.google.authorize_access_token()
     user_info = oauth.google.get(
         "https://openidconnect.googleapis.com/v1/userinfo"
     ).json()
