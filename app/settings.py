@@ -10,7 +10,7 @@ class Settings:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
-    PREFERRED_URL_SCHEME = "http"
+    PREFERRED_URL_SCHEME = "https"
 
     # Mongo
     MONGO_URI = os.getenv("MONGO_URI")
@@ -63,7 +63,7 @@ class Settings:
         "swagger": "2.0",
         "info": {"title": "Image & Parsing Job API", "version": "1.0.0"},
         "basePath": "/api",
-        "schemes": ["http"],
+        "schemes": ["https"],
         "tags": [{"name": "Jobs", "description": "Job endpoints"}],
     }
 
