@@ -13,4 +13,4 @@ COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 COPY . .
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8000", "wsgi:app"]
+CMD ["sh", "-c", "gunicorn -w 2 -b 0.0.0.0:$PORT wsgi:app"]
