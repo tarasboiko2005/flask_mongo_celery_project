@@ -1,8 +1,5 @@
 from app.extensions import celery, mail
-from app import create_app
 from flask_mail import Message
-
-app = create_app()
 
 
 @celery.task
@@ -21,6 +18,10 @@ Details: {details or "N/A"}
 
 Thank you for using our service!
 """
+
+    from app import create_app
+
+    app = create_app()
 
     with app.app_context():
         msg = Message(subject=subject, recipients=[user_email], body=body)
