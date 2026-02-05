@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 from flasgger import Swagger
 from flask import Flask, jsonify, request
@@ -41,7 +40,9 @@ def create_app():
     app.config.from_object(Settings)
     app.config.update(
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret"),
-        SQLALCHEMY_DATABASE_URI=os.getenv("SQLALCHEMY_DATABASE_URI"),
+        SQLALCHEMY_DATABASE_URI=os.getenv(
+            "SQLALCHEMY_DATABASE_URI", "sqlite:///app.db"
+        ),
         MONGO_URI=os.getenv("MONGO_URI"),
         CELERY_BROKER_URL=os.getenv("CELERY_BROKER_URL"),
         CELERY_RESULT_BACKEND=os.getenv("CELERY_RESULT_BACKEND"),
@@ -134,8 +135,9 @@ def create_app():
     admin.add_view(ModelView(User, db.session))
     admin.add_view(ModelView(Job, db.session))
 
-    with app.app_context():
-        db.create_all()
+    if app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("sqlite"):
+        with app.app_context():
+            db.metadata.create_all(bind=db.engine, checkfirst=True)
 
     Settings.setup_logging(app)
 

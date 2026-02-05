@@ -13,7 +13,7 @@ from app.rag.rag_pipeline import query_history
 from app.settings import Settings
 
 llm = get_llm()
-r = redis.Redis(host=Settings.REDIS_HOST, port=Settings.REDIS_PORT, db=0)
+r = redis.from_url(Settings.REDIS_URL, decode_responses=True)
 
 
 def convert_image_wrapper(query: str):
@@ -95,8 +95,6 @@ def _output_to_text(output: Any) -> str:
         return ""
     if isinstance(output, str):
         s = output.strip()
-        # Some model clients return structured content as a stringified Python/JSON list.
-        # Try to parse it and extract the text parts.
         if s.startswith("[") and s.endswith("]"):
             try:
                 parsed = json.loads(s)
@@ -139,7 +137,6 @@ def _output_to_text(output: Any) -> str:
 
 def _should_use_tools(query: str) -> bool:
     q = query.strip().lower()
-
     return any(
         key in q
         for key in (

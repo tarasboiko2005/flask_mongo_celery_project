@@ -55,7 +55,6 @@ def post_agent():
         if not file:
             return jsonify({"error": "file_required"}), 400
 
-        # If not authenticated (e.g. Swagger testing), allow passing email as a form field.
         user_email = getattr(current_user, "email", None) or request.form.get(
             "user_email"
         )
@@ -86,18 +85,21 @@ def post_agent():
             user_email=user_email,
         )
 
-        return jsonify(
-            {
-                "agent_message": AGENT_MESSAGE,
-                "input": filename,
-                "result": {
-                    "message": "Image conversion queued",
-                    "job_id": job_id,
-                    "status": "queued",
-                    "file": filepath,
-                },
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "agent_message": AGENT_MESSAGE,
+                    "input": filename,
+                    "result": {
+                        "message": "Image conversion queued",
+                        "job_id": job_id,
+                        "status": "queued",
+                        "file": filepath,
+                    },
+                }
+            ),
+            200,
+        )
 
     data = request.get_json(silent=True) or {}
     query = data.get("query")
@@ -129,17 +131,20 @@ def post_agent():
                 limit=5,
             )
 
-            return jsonify(
-                {
-                    "agent_message": AGENT_MESSAGE,
-                    "input": query,
-                    "result": {
-                        "message": "Parsing queued",
-                        "job_id": job_id,
-                        "status": "queued",
-                    },
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "agent_message": AGENT_MESSAGE,
+                        "input": query,
+                        "result": {
+                            "message": "Parsing queued",
+                            "job_id": job_id,
+                            "status": "queued",
+                        },
+                    }
+                ),
+                200,
+            )
 
         result = run_agent(query, debug=debug)
         return jsonify({"input": query, **result}), 200

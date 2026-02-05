@@ -10,7 +10,7 @@ class Settings:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
-    PREFERRED_URL_SCHEME = "http"
+    PREFERRED_URL_SCHEME = "https"
 
     # Mongo
     MONGO_URI = os.getenv("MONGO_URI")
@@ -24,6 +24,11 @@ class Settings:
     SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///app.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # BASE_URL for OAuth redirect
+    BASE_URL = os.getenv(
+        "BASE_URL", "https://flaskmongoceleryproject-production-2064.up.railway.app"
+    )
+
     # Google OAuth
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -33,6 +38,7 @@ class Settings:
         "client_secret": GOOGLE_CLIENT_SECRET,
         "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration",
         "client_kwargs": {"scope": "openid email profile"},
+        "redirect_uri": f"{BASE_URL}/auth/authorize",
     }
 
     # Swagger
@@ -57,7 +63,7 @@ class Settings:
         "swagger": "2.0",
         "info": {"title": "Image & Parsing Job API", "version": "1.0.0"},
         "basePath": "/api",
-        "schemes": ["http"],
+        "schemes": ["https"],
         "tags": [{"name": "Jobs", "description": "Job endpoints"}],
     }
 
@@ -114,3 +120,11 @@ class Settings:
     CELERY_RESULT_BACKEND = os.getenv(
         "CELERY_RESULT_BACKEND", "redis://localhost:6379/0"
     )
+
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
+    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "false").lower() == "true"
+    MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() == "true"
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", MAIL_USERNAME)

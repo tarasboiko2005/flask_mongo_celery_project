@@ -1,5 +1,5 @@
-from app.extensions import celery
-from app.utils.email import send_email
+from app.extensions import celery, mail
+from flask_mail import Message
 
 
 @celery.task
@@ -18,4 +18,16 @@ Details: {details or "N/A"}
 
 Thank you for using our service!
 """
-    send_email(subject, [user_email], body)
+
+    from app import create_app
+
+    app = create_app()
+
+    with app.app_context():
+        msg = Message(subject=subject, recipients=[user_email], body=body)
+        try:
+            mail.send(msg)
+            print(f"📧 Email sent to {user_email}")
+        except Exception as e:
+            print(f"❌ Failed to send email to {user_email}: {e}")
+            raise
